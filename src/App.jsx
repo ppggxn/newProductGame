@@ -29,7 +29,8 @@ export default function App() {
   }, []);
 
   const startNewGame = () => {
-    // 初始化棋盘 (同前)
+    // ... (棋盘生成逻辑保持不变) ...
+    // 1. 生成 1-9 乘法表中所有可能的唯一乘积
     const products = new Set();
     for (let i = 1; i <= 9; i++) {
       for (let j = 1; j <= 9; j++) {
@@ -43,32 +44,42 @@ export default function App() {
     }
 
     setBoard(shuffledProducts.map(val => ({ value: val, owner: null })));
-    setFactors([1, 1]); // 初始滑块位置放在 1,1 (或者 null 也可以，这里为了UI显示方便设为1)
+
+    // --- 修改点：初始状态为空，等待放置 ---
+    setFactors([null, null]);
     setTurnCount(0);
-    setActiveClip(null); // 还没选中滑块
+    setActiveClip(null);
+
+    // 游戏开始，P1 先手
     setCurrentPlayer('p1');
     setWinner(null);
-    setMsg("游戏开始！Player 1 请放置第 1 个滑块");
+    setMsg("游戏开始！Player 1 请放置第 1 个滑块 (A)");
   };
 
   // 点击底部数字条
   const handleNumberClick = (num) => {
     if (winner) return;
 
-    // --- 第一回合逻辑 (Player 1 只有开局有权动两个) ---
+    // --- 修改点：开局逻辑 ---
+
+    // 阶段 1: Player 1 放置第一个滑块 (A)
     if (turnCount === 0) {
-      // 放置第一个滑块
-      setFactors([num, factors[1]]);
+      setFactors([num, null]); // 放置 A，B 仍为空
       setTurnCount(1);
-      setMsg("Player 1 请放置第 2 个滑块");
+      setCurrentPlayer('p2'); // <--- 切换到 P2
+      setMsg("轮到 Player 2：请放置第 2 个滑块 (B)");
       return;
     }
+
+    // 阶段 2: Player 2 放置第二个滑块 (B) -> 产生第一个乘积
     if (turnCount === 1) {
-      // 放置第二个滑块 -> 触发落子 -> 换人
-      const newFactors = [factors[0], num];
+      const newFactors = [factors[0], num]; // A 保持不变，放置 B
       setFactors(newFactors);
-      setTurnCount(2);
-      attemptMove(newFactors, 'p1');
+      setTurnCount(2); // 进入正常游戏阶段
+
+      // 注意：这里传入 'p2'，因为这一步是 P2 操作的，格子归 P2
+      // attemptMove 会处理落子，并自动切换回 P1
+      attemptMove(newFactors, 'p2');
       return;
     }
 
@@ -180,7 +191,11 @@ export default function App() {
       <div className="controls-area">
         <p className="product-display">
             当前乘积:
-            <span className="math-text"> {factors[0]} × {factors[1]} = {factors[0]*factors[1]} </span>
+            <span className="math-text">
+              {factors[0] && factors[1]
+                ? `${factors[0]} × ${factors[1]} = ${factors[0]*factors[1]}`
+                : '等待开局...'}
+            </span>
         </p>
 
         <div className="track-container">
@@ -201,6 +216,7 @@ export default function App() {
             <div
                 className={`paperclip clip-a ${activeClip === 0 ? 'active' : ''}`}
                 style={{
+                    display: factors[0] ? 'flex' : 'none',
                     left: `calc(${(factors[0] - 1) * 11.11}% + 2%)`,
                     zIndex: activeClip === 0 ? 20 : 10 // 选中的滑块层级更高
                 }}
@@ -227,6 +243,7 @@ export default function App() {
             <div
                 className={`paperclip clip-b ${activeClip === 1 ? 'active' : ''}`}
                 style={{
+                    display: factors[1] ? 'flex' : 'none',
                     left: `calc(${(factors[1] - 1) * 11.11}% + 2%)`,
                     zIndex: activeClip === 1 ? 20 : 10
                 }}
