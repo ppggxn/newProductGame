@@ -1,0 +1,195 @@
+/* App.css */
+:root {
+  --p1-color: #ff6b6b;
+  --p2-color: #4ecdc4;
+  --bg-color: #242424;
+  --track-bg: #333;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: white;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 头部信息 */
+.header { text-align: center; width: 100%; margin-bottom: 20px; }
+
+.info-panel {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+
+.player-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #444;
+  opacity: 0.5;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.player-badge.p1.active { opacity: 1; background: var(--p1-color); color: #fff; box-shadow: 0 0 10px var(--p1-color); }
+.player-badge.p2.active { opacity: 1; background: var(--p2-color); color: #fff; box-shadow: 0 0 10px var(--p2-color); }
+
+.message-box {
+  height: 30px;
+  color: gold;
+  font-size: 0.9em;
+}
+
+/* 棋盘 */
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  background: #444;
+  padding: 8px;
+  border-radius: 8px;
+  width: 100%;
+  aspect-ratio: 1; /* 保持正方形 */
+}
+
+.cell {
+  background: #eee;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  font-weight: 800;
+  border-radius: 4px;
+  cursor: default;
+}
+
+.cell.p1 { background: var(--p1-color); color: white; }
+.cell.p2 { background: var(--p2-color); color: white; }
+
+/* 底部控制区 - 核心修改部分 */
+.controls-area {
+  margin-top: 30px;
+  width: 100%;
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.product-display {
+  text-align: center;
+  margin: 0 0 15px 0;
+  font-size: 1.1em;
+  color: #aaa;
+}
+
+.math-text {
+  color: white;
+  font-weight: bold;
+  font-family: monospace;
+  font-size: 1.4em;
+}
+
+/* 轨道容器 */
+.track-container {
+  position: relative; /* 为滑块绝对定位提供基准 */
+  height: 60px;
+  background: var(--track-bg);
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 2%; /* 左右留点边距 */
+  margin-top: 10px;
+}
+
+/* 数字层 */
+.track-numbers {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  z-index: 1; /* 在滑块下面 */
+}
+
+.track-number {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #888;
+  cursor: pointer;
+  z-index: 2; /* 确保数字能被点击 */
+}
+
+.track-number:hover {
+  color: white;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+
+/* 滑块 (Paperclips) */
+.paperclip {
+  position: absolute;
+  top: 5px;
+  width: 6%; /* 宽度大约是一个数字的宽度 */
+  height: 50px;
+  border-radius: 50px;
+  border: 3px solid;
+  z-index: 3; /* 在数字上面 */
+  transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性滑动动画 */
+  pointer-events: auto; /* 允许点击滑块本身 */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* 字母在底部 */
+  padding-bottom: 2px;
+  font-size: 0.7em;
+  font-weight: bold;
+  cursor: grab;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.2); /* 轻微背景让它更像实体 */
+}
+
+/* 滑块A样式 */
+.clip-a {
+  border-color: #ff9f43; /* 橙色边框 */
+  color: #ff9f43;
+}
+
+/* 滑块B样式 */
+.clip-b {
+  border-color: #54a0ff; /* 蓝色边框 */
+  color: #54a0ff;
+  top: 5px; /* 这里如果两个重叠，可以用不同的top稍微错开，或者利用透明度 */
+}
+
+/* 选中激活状态 */
+.paperclip.active {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.reset-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #555;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.reset-btn:hover { background: #666; }
