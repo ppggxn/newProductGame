@@ -1,4 +1,5 @@
-/* App.css - 全屏适配优化版 */
+/* App.css */
+/* ...保留之前的 :root, html, body, #root, .game-container 等基础设置... */
 :root {
   --p1-color: #ff6b6b;
   --p2-color: #4ecdc4;
@@ -7,189 +8,140 @@
   --board-bg: #444;
 }
 
-/* 强制隐藏滚动条并锁定视口 */
 html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* 禁止溢出滚动 */
-  background-color: var(--bg-color);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+  background-color: var(--bg-color); font-family: 'Segoe UI', system-ui, sans-serif;
 }
-
-#root {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center; /* 垂直居中 */
-}
-
+#root { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; }
 .game-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 95%;
-  /* 限制最大宽度，同时确保在低高度屏幕下高度不会爆炸 */
-  max-width: 450px;
-  /* 确保内容始终在视口内 */
-  max-height: 98vh;
+  display: flex; flex-direction: column; align-items: center;
+  width: 95%; max-width: 450px; max-height: 98vh;
 }
 
-/* --- 头部微调：缩小间距以节省空间 --- */
-.header {
-  text-align: center;
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-h1 {
-  margin: 0 0 5px 0;
-  font-size: 1.5rem;
-  color: #fff;
-}
+/* --- 头部布局优化 --- */
+.header { text-align: center; width: 100%; margin-bottom: 10px; }
+h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 
 .info-panel {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between; /* 关键：两端对齐 */
+  width: 100%;
+  position: relative;
+  margin-bottom: 5px;
+}
+
+/* 左右占位容器，确保中间绝对居中 */
+.panel-spacer, .panel-right {
+  width: 40px; /* 给一个固定宽度 */
+  display: flex;
+  justify-content: flex-end;
+}
+
+.badges-container {
+  display: flex;
   gap: 10px;
+  justify-content: center;
+  flex: 1; /* 占据剩余空间 */
 }
 
 .player-badge {
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  border: 2px solid #444;
+  padding: 4px 10px; border-radius: 15px; font-size: 0.8rem;
+  font-weight: bold; border: 2px solid #444; transition: all 0.3s;
 }
+.player-badge.p1.active { border-color: var(--p1-color); color: var(--p1-color); background: rgba(255,107,107,0.1); }
+.player-badge.p2.active { border-color: var(--p2-color); color: var(--p2-color); background: rgba(78,205,196,0.1); }
 
-.player-badge.p1.active { border-color: var(--p1-color); color: var(--p1-color); }
-.player-badge.p2.active { border-color: var(--p2-color); color: var(--p2-color); }
-
-.message-box {
-  min-height: 1.2em;
-  color: #fbceb1;
-  font-size: 0.85rem;
-  margin-top: 5px;
+/* 迷你重置按钮 */
+.reset-btn-mini {
+  background: transparent;
+  color: #666;
+  border: 1px solid #555;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
 }
+.reset-btn-mini:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.1); }
 
-/* --- 棋盘区域：自适应宽高 --- */
+.message-box { min-height: 1.2em; color: #fbceb1; font-size: 0.85rem; margin-top: 5px; }
+
+/* --- 棋盘 --- */
 .board {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-  background: var(--board-bg);
-  padding: 6px;
-  border-radius: 8px;
-  width: 100%;
-  /* 关键：确保棋盘在屏幕矮的时候自动缩小 */
-  max-height: 55vh;
-  aspect-ratio: 1 / 1;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
+  background: var(--board-bg); padding: 6px; border-radius: 8px;
+  width: 100%; max-height: 55vh; aspect-ratio: 1 / 1;
   box-shadow: 0 8px 16px rgba(0,0,0,0.4);
 }
 
 .cell {
-  background: #eee;
-  color: #333;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 4px;
-  font-weight: 800;
-  user-select: none;
+  background: #eee; color: #333; display: flex; justify-content: center; align-items: center;
+  border-radius: 4px; font-weight: 800; user-select: none;
   font-size: clamp(0.9rem, 3.5vw, 1.3rem);
+  transition: transform 0.2s;
 }
-
 .cell.p1 { background: var(--p1-color); color: white; }
 .cell.p2 { background: var(--p2-color); color: white; }
 
-/* --- 控制区微调 --- */
+/* 获胜连线特效 */
+.cell.winning {
+  animation: winFlash 1s infinite alternate;
+  z-index: 10;
+  box-shadow: 0 0 15px currentColor;
+  border: 2px solid #fff;
+}
+
+@keyframes winFlash {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.05); filter: brightness(1.3); }
+}
+
+/* --- 控制区 --- */
 .controls-area {
-  margin-top: 15px;
-  width: 100%;
-  background: #2a2a2a;
-  padding: 12px;
-  border-radius: 12px;
-  box-sizing: border-box;
+  margin-top: 15px; width: 100%; background: #2a2a2a;
+  padding: 12px; border-radius: 12px; box-sizing: border-box;
 }
-
-.product-display {
-  text-align: center;
-  margin: 0 0 8px 0;
-  font-size: 0.9rem;
-  color: #aaa;
-}
-
-.math-text {
-  color: white;
-  font-weight: bold;
-  font-size: 1.1rem;
-}
+.product-display { text-align: center; margin: 0 0 8px 0; font-size: 0.9rem; color: #aaa; }
+.math-text { color: white; font-weight: bold; font-size: 1.1rem; }
 
 .track-container {
-  position: relative;
-  height: 44px;
-  background: var(--track-bg);
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
+  position: relative; height: 44px; background: var(--track-bg);
+  border-radius: 22px; display: flex; align-items: center;
 }
-
-.track-numbers {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  padding: 0 2%;
-  box-sizing: border-box;
-}
+.track-numbers { display: flex; width: 100%; height: 100%; padding: 0 2%; box-sizing: border-box; }
 
 .track-number {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #666;
-  cursor: pointer;
-  z-index: 2;
+  flex: 1; display: flex; justify-content: center; align-items: center;
+  font-size: 0.9rem; font-weight: bold; color: #888; cursor: pointer; z-index: 2;
+  transition: all 0.2s;
 }
+.track-number:hover { color: #fff; }
 
+/* 禁用/反色状态 */
+.track-number.forbidden {
+  color: #444; /* 变暗 */
+  cursor: not-allowed;
+  text-decoration: line-through; /* 删除线 */
+  background: rgba(0, 0, 0, 0.2); /* 稍微深一点的背景 */
+  border-radius: 50%;
+  transform: scale(0.8);
+}
+.track-number.forbidden:hover { color: #d63031; /* 鼠标悬停显示红色警告 */ }
+
+/* 滑块样式 (保持不变) */
 .paperclip {
-  position: absolute;
-  top: 3px;
-  height: 38px;
-  width: 8%;
-  border-radius: 20px;
-  border: 2px solid;
-  z-index: 3;
+  position: absolute; top: 3px; height: 38px; width: 8%;
+  border-radius: 20px; border: 2px solid; z-index: 3;
   transition: left 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 2px;
-  font-size: 0.6rem;
-  background: rgba(0,0,0,0.3);
+  display: flex; justify-content: center; align-items: flex-end;
+  padding-bottom: 2px; font-size: 0.6rem; background: rgba(0,0,0,0.3); cursor: grab;
 }
-
 .clip-a { border-color: #ff9f43; color: #ff9f43; }
 .clip-b { border-color: #54a0ff; color: #54a0ff; }
-
-.paperclip.active {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px) scale(1.1);
-}
-
-.reset-btn {
-  margin-top: 10px;
-  padding: 6px 20px;
-  background: transparent;
-  color: #666;
-  border: 1px solid #444;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.reset-btn:hover { color: #fff; border-color: #888; }
+.paperclip.active { background: rgba(255, 255, 255, 0.2); transform: translateY(-3px) scale(1.1); }
