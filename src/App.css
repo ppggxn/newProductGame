@@ -145,3 +145,27 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 .clip-a { border-color: #ff9f43; color: #ff9f43; }
 .clip-b { border-color: #54a0ff; color: #54a0ff; }
 .paperclip.active { background: rgba(255, 255, 255, 0.2); transform: translateY(-3px) scale(1.1); }
+
+/* 添加到 App.css 末尾 */
+
+/* 可点击的玩家 Badge */
+.player-badge.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.player-badge.clickable:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+
+.player-badge.clickable:active {
+  transform: translateY(1px);
+}
+
+/* AI 回合时，底部控制区稍微变暗，表示不可操作 */
+.controls-area.ai-turn {
+  opacity: 0.7;
+  pointer-events: none; /* 物理禁用所有点击，防止人类手快 */
+  transition: opacity 0.3s;
+}

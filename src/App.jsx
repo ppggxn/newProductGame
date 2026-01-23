@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
+import { getAIMove } from './ai';
 
 const GRID_SIZE = 6;
 const WIN_COUNT = 3;
@@ -15,9 +16,23 @@ export default function App() {
   const [winningLine, setWinningLine] = useState([]); // 新增：存储获胜连线的索引
   const [msg, setMsg] = useState("Player 1 请放置第 1 个滑块");
 
+  // --- 新增状态：控制器设置 ---
+  // --- 新增状态：玩家类型 'human' 或 'ai' ---
+  const [playerTypes, setPlayerTypes] = useState({ p1: 'human', p2: 'human' });
+
+
+  // 使用 useEffect 处理 AI 自动走棋逻辑
   useEffect(() => {
-    startNewGame();
-  }, []);
+    // 如果游戏结束，或当前玩家是人类，则不作为
+    if (winner || playerTypes[currentPlayer] === 'human') return;
+
+    // 设置思考时间 (1000ms)，模拟 AI 思考，也方便观众看清
+    const timer = setTimeout(() => {
+      performAIMove();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentPlayer, playerTypes, winner, board, factors, turnCount]); // 依赖项要全，确保状态更新触发 Effect
 
   const startNewGame = () => {
     const products = new Set();
@@ -42,7 +57,63 @@ export default function App() {
     setMsg("游戏开始！Player 1 请放置第 1 个滑块 (A)");
   };
 
+
+  // --- 新增：执行 AI 移动 ---
+  const performAIMove = () => {
+    const move = getAIMove(board, factors, turnCount);
+
+    if (!move) {
+      setMsg("AI 投降了 (无路可走)");
+      return;
+    }
+
+    const { clipIndex, value } = move;
+
+    // 模拟 UI 反馈：选中要移动的滑块（可选，为了视觉效果）
+    setActiveClip(clipIndex);
+
+    // 短暂延迟后真正落子，让"选中滑块"这个动作被看到（可选，更拟人）
+    // 这里为了代码简单，直接执行落子
+
+    // 构建新的 factors
+    const newFactors = [...factors];
+    newFactors[clipIndex] = value;
+
+    // 更新状态
+    setFactors(newFactors);
+    setActiveClip(null); // 移动完取消选中
+
+    // 处理回合逻辑
+    if (turnCount === 0) {
+      setTurnCount(1);
+      setCurrentPlayer('p2');
+      setMsg("轮到 Player 2 (AI)...");
+    } else if (turnCount === 1) {
+      setTurnCount(2);
+      attemptMove(newFactors, 'p2'); // P2 落子，attemptMove 会自动切换回 P1
+    } else {
+      attemptMove(newFactors, currentPlayer);
+    }
+  };
+
+    // --- 新增：切换玩家类型 ---
+  const togglePlayerType = (p) => {
+    setPlayerTypes(prev => ({
+      ...prev,
+      [p]: prev[p] === 'human' ? 'ai' : 'human'
+    }));
+  };
+
+    // 辅助：检查乘积是否被占
+  const isProductOccupied = (val) => {
+      const cell = board.find(c => c.value === val);
+      return cell && cell.owner !== null;
+  };
+
+
   const handleNumberClick = (num) => {
+    // 如果当前是 AI 回合，禁止人类点击操作
+    if (playerTypes[currentPlayer] === 'ai' && !winner) return;
     if (winner) return;
 
     // --- 开局逻辑 ---
@@ -106,11 +177,6 @@ export default function App() {
     attemptMove(newFactors, currentPlayer);
   };
 
-  // 辅助：检查乘积是否被占
-  const isProductOccupied = (val) => {
-      const cell = board.find(c => c.value === val);
-      return cell && cell.owner !== null;
-  };
 
   const attemptMove = (currentFactors, playerWhoMoved) => {
     const product = currentFactors[0] * currentFactors[1];
@@ -138,7 +204,9 @@ export default function App() {
     } else {
       const next = playerWhoMoved === 'p1' ? 'p2' : 'p1';
       setCurrentPlayer(next);
-      setMsg(`轮到 ${next === 'p1' ? 'Player 1' : 'Player 2'} (点击滑块以移动)`);
+      // 修改这里：提示信息根据下一位是人还是AI变化
+      const nextType = playerTypes[next];
+      setMsg(`轮到 ${next === 'p1' ? 'Player 1' : 'Player 2'} (${nextType === 'ai' ? 'AI 思考中...' : '请操作'})`);
     }
   };
 
@@ -181,8 +249,22 @@ export default function App() {
 
             {/* 2. 中间玩家徽章 */}
             <div className="badges-container">
-                <div className={`player-badge p1 ${currentPlayer==='p1'?'active':''}`}>Player 1</div>
-                <div className={`player-badge p2 ${currentPlayer==='p2'?'active':''}`}>Player 2</div>
+                {/* 给 Badge 添加点击事件，显示 🤖 图标 */}
+                <div
+                    className={`player-badge p1 ${currentPlayer==='p1'?'active':''} clickable`}
+                    onClick={() => togglePlayerType('p1')}
+                    title="点击切换 人类/AI"
+                >
+                    {playerTypes.p1 === 'ai' ? '🤖 AI-1' : '👤 Player 1'}
+                </div>
+
+                <div
+                    className={`player-badge p2 ${currentPlayer==='p2'?'active':''} clickable`}
+                    onClick={() => togglePlayerType('p2')}
+                    title="点击切换 人类/AI"
+                >
+                    {playerTypes.p2 === 'ai' ? '🤖 AI-2' : '👤 Player 2'}
+                </div>
             </div>
 
             {/* 3. 右侧重置按钮 */}
@@ -210,7 +292,8 @@ export default function App() {
         })}
       </div>
 
-      <div className="controls-area">
+      {/* 底部控制区：如果是 AI 回合，可以加个遮罩或者禁用点击，这里简单处理不禁用视觉，但在 onClick 里拦截了 */}
+      <div className={`controls-area ${playerTypes[currentPlayer] === 'ai' ? 'ai-turn' : ''}`}>
         <p className="product-display">
             当前乘积:
             <span className="math-text">
@@ -223,15 +306,10 @@ export default function App() {
         <div className="track-container">
             <div className="track-numbers">
                 {FACTOR_RANGE.map(num => {
-                    // --- 动态计算禁用状态 ---
                     let isForbidden = false;
-                    // 只有当玩家拿起了某个滑块(activeClip !== null)时，才提示哪些坑不能跳
-                    if (activeClip !== null && !winner) {
-                        const otherFactor = factors[activeClip === 0 ? 1 : 0]; // 另一个不动的滑块的值
-                        // 如果这一步走下去，乘积被占了，则禁止
-                        if (isProductOccupied(num * otherFactor)) {
-                            isForbidden = true;
-                        }
+                    if (activeClip !== null && !winner && playerTypes[currentPlayer] === 'human') { // 只有人类回合才显示禁手
+                        const otherFactor = factors[activeClip === 0 ? 1 : 0];
+                        if (isProductOccupied(num * otherFactor)) isForbidden = true;
                     }
 
                     return (
@@ -246,34 +324,24 @@ export default function App() {
                 })}
             </div>
 
-            {/* 滑块 A */}
             <div
                 className={`paperclip clip-a ${activeClip === 0 ? 'active' : ''}`}
-                style={{
-                    display: factors[0] ? 'flex' : 'none',
-                    left: `calc(${(factors[0] - 1) * 11.11}% + 2%)`,
-                    zIndex: activeClip === 0 ? 20 : 10
-                }}
+                style={{ display: factors[0] ? 'flex' : 'none', left: `calc(${(factors[0] - 1) * 11.11}% + 2%)`, zIndex: activeClip === 0 ? 20 : 10 }}
                 onClick={(e) => {
                     e.stopPropagation();
-                    if (turnCount < 2) return;
+                    if (turnCount < 2 || playerTypes[currentPlayer] === 'ai') return; // AI 回合禁点
                     if (activeClip === 1) { handleNumberClick(factors[0]); return; }
                     setActiveClip(0);
                     setMsg("已拿起滑块 A");
                 }}
             >A</div>
 
-            {/* 滑块 B */}
             <div
                 className={`paperclip clip-b ${activeClip === 1 ? 'active' : ''}`}
-                style={{
-                    display: factors[1] ? 'flex' : 'none',
-                    left: `calc(${(factors[1] - 1) * 11.11}% + 2%)`,
-                    zIndex: activeClip === 1 ? 20 : 10
-                }}
+                style={{ display: factors[1] ? 'flex' : 'none', left: `calc(${(factors[1] - 1) * 11.11}% + 2%)`, zIndex: activeClip === 1 ? 20 : 10 }}
                 onClick={(e) => {
                     e.stopPropagation();
-                    if (turnCount < 2) return;
+                    if (turnCount < 2 || playerTypes[currentPlayer] === 'ai') return;
                     if (activeClip === 0) { handleNumberClick(factors[1]); return; }
                     setActiveClip(1);
                     setMsg("已拿起滑块 B");
