@@ -6,8 +6,26 @@ const GRID_SIZE = 6;
 const WIN_COUNT = 3;
 const FACTOR_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+// 在 App 组件外面定义
+const generateInitialBoard = () => {
+  const products = new Set();
+  for (let i = 1; i <= 9; i++) {
+    for (let j = 1; j <= 9; j++) {
+      products.add(i * j);
+    }
+  }
+  const shuffledProducts = Array.from(products);
+  for (let i = shuffledProducts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+  }
+  return shuffledProducts.map(val => ({ value: val, owner: null }));
+};
+
 export default function App() {
-  const [board, setBoard] = useState([]);
+  // 使用函数初始化，确保第一帧就有数据
+  const [board, setBoard] = useState(() => generateInitialBoard());
+
   const [factors, setFactors] = useState([null, null]);
   const [activeClip, setActiveClip] = useState(null);
   const [turnCount, setTurnCount] = useState(0);
@@ -35,27 +53,17 @@ export default function App() {
   }, [currentPlayer, playerTypes, winner, board, factors, turnCount]); // 依赖项要全，确保状态更新触发 Effect
 
   const startNewGame = () => {
-    const products = new Set();
-    for (let i = 1; i <= 9; i++) {
-      for (let j = 1; j <= 9; j++) {
-        products.add(i * j);
-      }
-    }
-    const shuffledProducts = Array.from(products);
-    for (let i = shuffledProducts.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
-    }
-
-    setBoard(shuffledProducts.map(val => ({ value: val, owner: null })));
-    setFactors([null, null]);
-    setTurnCount(0);
-    setActiveClip(null);
-    setCurrentPlayer('p1');
-    setWinner(null);
-    setWinningLine([]); // 重置连线
-    setMsg("游戏开始！Player 1 请放置第 1 个滑块 (A)");
-  };
+      // 重新生成随机棋盘
+      setBoard(generateInitialBoard());
+      // 重置其他所有状态
+      setFactors([null, null]);
+      setTurnCount(0);
+      setActiveClip(null);
+      setCurrentPlayer('p1');
+      setWinner(null);
+      setWinningLine([]);
+      setMsg("游戏开始！Player 1 请放置第 1 个滑块 (A)");
+    };
 
 
   // --- 新增：执行 AI 移动 ---
