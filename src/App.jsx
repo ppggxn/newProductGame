@@ -103,8 +103,9 @@ export default function App() {
   };
 
   const isProductOccupied = (val) => {
-    const cell = board.find(c => c.value === val);
-    return cell && cell.owner !== null;
+    const index = valueToIndexMap[val];
+    // 增加可选链 ?. 确保安全
+    return board[index]?.owner !== null;
   };
 
   const handleNumberClick = (num) => {
