@@ -1,16 +1,56 @@
-# React + Vite
+项目开发文档
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+1. 项目概述
 
-Currently, two official plugins are available:
+游戏名称：New Product Game
+核心玩法：玩家通过移动底部的两个滑块（因数）来占领棋盘上对应的乘积格子。率先在 6x6 棋盘上形成“四/三子连线”的一方获胜
+技术栈：React (Vite), CSS3 (Flexbox/Grid), JavaScript (ES6+)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+2. 核心文件结构
 
-## React Compiler
+`src/App.jsx`: 状态管理中心。控制游戏流程（回合切换、胜负判定）、多语言解析逻辑以及与 AI 逻辑的对接
+`src/App.css`: 响应式样式表。包含棋盘的 Grid 布局、因数轨道的绝对定位、获胜高亮动画以及移动端适配逻辑
+`src/ai.js`: 独立的 AI 策略文件。目前实现为随机合法落子，预留了 `getAIMove` 接口用于后续接入其他算法
+`src/i18n.js`: 国际化配置包。采用 KeyValue 模式存储文本，支持动态参数填充（如：`{{player}}`）
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. 已实现的重点功能
 
-## Expanding the ESLint configuration
+动态棋盘生成：每次开局随机，确保每局体验不同
+智能合法性检查：禁止占领已被他人占据的格子
+禁手提示：当玩家选中滑块时，底部数字条会自动置灰（forbidden 样式）那些会导致冲突的数字
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+AI调度系统：
+支持“人类 vs AI”、“AI vs AI”以及随时切换
+内置延迟模拟思考过程，增强视觉反馈
+
+多语言解耦：
+使用 `msgObj` 存储状态，确保切换语言时当前提示信息同步翻译，无需手动刷新状态
+
+4. 关键算法逻辑说明
+
+胜负判定 (`getWinningLine`)
+
+采用了八方向搜索算法。每当新棋子落下，从该点出发探测水平、垂直、两条对角线。如果该方向连子数 ，返回所有中招格子的索引数组用于高亮动画
+
+布局自适应
+
+PC 端：通过 `maxheight: 55vh` 确保棋盘在矮屏幕显示器上不会将标题挤出视野
+移动端：棋盘宽度自适应，禁用了滚动条（`overflow: hidden`），提供全屏沉浸感
+
+5. 后续开发规划
+
+AI性能飞跃
+
+方案 A：贪心算法（简单 / 初级）。AI只看当前这一步。逻辑：遍历所有合法位置，计算每个位置产生的乘积。优先级：如果一步能成胜利所需的连接(WIN_COUNT)，直接下。如果一步能堵住玩家的获胜连接，必须堵。否则，随机选一个
+
+方案 B：启发式评估 + Minimax 算法（中级）。AI 会模拟“我走一步，你走一步”的过程。评分函数：给棋盘状态打分。例如，自己连成 2 个：+10 分。自己连成 3 个：+100 分。对方连成 3 个：-500 分。占据中心区域：+5 分。搜索深度：由于分支因子极小，搜索 4-6 层（即预测双方各走 3 步）即可
+
+方案 C：蒙特卡洛树搜索（MCTS）（高级），类似 AlphaGo 的简化版。AI 通过成千上万次的随机自我对弈来判断哪一个动作的胜率最高。优点：不需要复杂的评分函数，能发现人类难以察觉的阴招。缺点：在 JavaScript 中实现较复杂，性能开销比 Minimax 大
+
+游戏功能
+
+本地战绩记录：使用 `localStorage` 记录玩家与不同难度 AI 的胜负比。记录落子顺序，实现回放、悔棋功能
+
+联网对战
+
+玩家可以联网对战
