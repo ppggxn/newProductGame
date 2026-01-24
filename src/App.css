@@ -52,6 +52,22 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 .player-badge.p1.active { border-color: var(--p1-color); color: var(--p1-color); background: rgba(255,107,107,0.1); }
 .player-badge.p2.active { border-color: var(--p2-color); color: var(--p2-color); background: rgba(78,205,196,0.1); }
 
+.language-btn {
+  background: transparent;
+  color: #666;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.language-btn:hover { color: #fff; }
+
 /* 迷你重置按钮 */
 .reset-btn-mini {
   background: transparent;
@@ -68,6 +84,7 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   align-items: center;
   padding: 0;
 }
+
 .reset-btn-mini:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.1); }
 
 .message-box { min-height: 1.2em; color: #fbceb1; font-size: 0.85rem; margin-top: 5px; }
@@ -134,17 +151,17 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 }
 .track-number.forbidden:hover { color: #d63031; /* 鼠标悬停显示红色警告 */ }
 
-/* 滑块样式 (保持不变) */
+/* 滑块样式*/
 .paperclip {
-  position: absolute; top: 3px; height: 38px; width: 8%;
+  position: absolute; top: 1px; height: 12px; width: 7%;
   border-radius: 20px; border: 2px solid; z-index: 3;
   transition: left 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
   display: flex; justify-content: center; align-items: flex-end;
-  padding-bottom: 2px; font-size: 0.6rem; background: rgba(0,0,0,0.3); cursor: grab;
+  padding-bottom: 0px; font-size: 0.5rem; background: rgba(0,0,0,0.3); cursor: grab;
 }
 .clip-a { border-color: #ff9f43; color: #ff9f43; }
 .clip-b { border-color: #54a0ff; color: #54a0ff; }
-.paperclip.active { background: rgba(255, 255, 255, 0.2); transform: translateY(-3px) scale(1.1); }
+.paperclip.active { background: rgba(255, 255, 255, 0.2); transform: translateY(-3px) scale(1.4); }
 
 /* 添加到 App.css 末尾 */
 
