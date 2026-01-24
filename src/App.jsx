@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import { getAIMove } from './ai';
-import { translations } from './i18n'; // 1. 导入翻译
-
-const GRID_SIZE = 6;
-const WIN_COUNT = 3;
-const FACTOR_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const THINKING_TIME = 1000;
+import { translations } from './i18n';
+import { GRID_SIZE, WIN_COUNT, FACTOR_RANGE, THINKING_TIME } from './constants';
 
 const generateInitialBoard = () => {
   const products = new Set();

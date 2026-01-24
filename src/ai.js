@@ -1,8 +1,7 @@
 // src/ai.js
 
-const FACTOR_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const GRID_SIZE = 6;
-const WIN_COUNT = 3; // 对应 App.jsx 中的逻辑
+import { GRID_SIZE, WIN_COUNT, FACTOR_RANGE } from './constants';
+
 
 /**
  * 获取 AI 的下一步移动
