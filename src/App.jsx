@@ -6,6 +6,7 @@ import { translations } from './i18n'; // 1. 导入翻译
 const GRID_SIZE = 6;
 const WIN_COUNT = 3;
 const FACTOR_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const THINKING_TIME = 1000;
 
 const generateInitialBoard = () => {
   const products = new Set();
@@ -49,7 +50,8 @@ export default function App() {
 
   useEffect(() => {
     if (winner || playerTypes[currentPlayer] === 'human') return;
-    const timer = setTimeout(() => performAIMove(), 1000);
+    // 内置延迟模拟思考过程
+    const timer = setTimeout(() => performAIMove(), THINKING_TIME);
     return () => clearTimeout(timer);
   }, [currentPlayer, playerTypes, winner, board, factors, turnCount]);
 
