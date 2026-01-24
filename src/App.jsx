@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './App.css';
 import { getAIMove } from './ai';
 import { translations } from './i18n';
@@ -28,6 +28,16 @@ export default function App() {
   const [winningLine, setWinningLine] = useState([]);
   const [playerTypes, setPlayerTypes] = useState({ p1: 'human', p2: 'human' });
 
+  // 【新增】生成高频查找映射表Value-to-Index Map (O(1) 查找)
+  // 仅在 board 数组引用变化（即重新开局）时重新计算
+  const valueToIndexMap = useMemo(() => {
+    const map = {};
+    board.forEach((cell, idx) => {
+      map[cell.value] = idx;
+    });
+    return map;
+  }, [board]);
+
   // 3. 核心：msg 现在存对象
   const [msgObj, setMsgObj] = useState({ key: 'startMsg' });
 
@@ -49,7 +59,7 @@ export default function App() {
     // 内置延迟模拟思考过程
     const timer = setTimeout(() => performAIMove(), THINKING_TIME);
     return () => clearTimeout(timer);
-  }, [currentPlayer, playerTypes, winner, board, factors, turnCount]);
+  }, [currentPlayer, playerTypes, winner, board, factors, turnCount, valueToIndexMap]);
 
   const startNewGame = () => {
     setBoard(generateInitialBoard());
@@ -63,7 +73,8 @@ export default function App() {
   };
 
   const performAIMove = () => {
-    const move = getAIMove(board, factors, turnCount);
+    // 传入映射表
+    const move = getAIMove(board, factors, turnCount, valueToIndexMap);
     if (!move) {
       setMsgObj({ key: 'aiSurrender' });
       return;
