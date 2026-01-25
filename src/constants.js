@@ -1,7 +1,7 @@
 // src/constants.js
 
 export const GRID_SIZE = 6;
-export const WIN_COUNT = 4;
+export const WIN_COUNT = 3;
 export const FACTOR_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 export const THINKING_TIME = 1000;
 
