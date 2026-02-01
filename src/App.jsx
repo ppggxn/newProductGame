@@ -4,6 +4,79 @@ import { getAIMove } from './ai';
 import { translations } from './i18n';
 import { GRID_SIZE, WIN_COUNT, FACTOR_RANGE, THINKING_TIME } from './constants';
 
+// --- 新增：设置模态框组件 ---
+const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang }) => {
+  if (!isOpen) return null;
+
+  // 模拟从 localStorage 读取数据 (你可以自定义 key)
+  // 假设存储格式: { humanWins: 5, aiWins: 3, total: 10 }
+  const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"humanWins":0, "aiWins":0, "total":0}');
+  const winRate = stats.total > 0 ? Math.round((stats.humanWins / stats.total) * 100) : 0;
+
+  const t = translations[lang]; // 简单复用一下语言包，或者直接写中文
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>设置 (Settings)</h2>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+
+        {/* 1. 胜利条件设置 */}
+        <div className="modal-section">
+          <h3>连线目标 (Win Count)</h3>
+          <div className="segmented-control">
+            {[3, 4, 5, 6].map(num => (
+              <button
+                key={num}
+                className={`segment-btn ${winCount === num ? 'active' : ''}`}
+                onClick={() => setWinCount(num)}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 2. AI 难度设置 */}
+        <div className="modal-section">
+          <h3>AI 难度 (Difficulty)</h3>
+          <div className="segmented-control">
+            {['random', 'greedy', 'minimax'].map(mode => (
+              <button
+                key={mode}
+                className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
+                onClick={() => setDifficulty(mode)}
+                // 暂时只允许选 Random，其他只是 UI 展示，或者你可以根据 ai.js 进度放开
+                title={mode}
+              >
+                {mode === 'random' ? '随机' : mode === 'greedy' ? '贪心' : '高难'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. 统计面板 */}
+        <div className="modal-section">
+          <h3>战绩统计 (Stats)</h3>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <span className="stat-value">{stats.humanWins} / {stats.total}</span>
+              <span className="stat-label">胜场 / 总局数</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-value">{winRate}%</span>
+              <span className="stat-label">人类胜率</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
 const generateInitialBoard = () => {
   const products = new Set();
   for (let i = 1; i <= 9; i++) {
@@ -27,7 +100,10 @@ export default function App() {
   const [winner, setWinner] = useState(null);
   const [winningLine, setWinningLine] = useState([]);
   const [playerTypes, setPlayerTypes] = useState({ p1: 'human', p2: 'human' });
-
+  // --- 新增 UI State ---
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingWinCount, setSettingWinCount] = useState(WIN_COUNT); // 暂时只控制 UI
+  const [aiDifficulty, setAiDifficulty] = useState('random'); // 暂时只控制 UI
   // 【新增】生成高频查找映射表Value-to-Index Map (O(1) 查找)
   // 仅在 board 数组引用变化（即重新开局）时重新计算
   const valueToIndexMap = useMemo(() => {
@@ -206,7 +282,16 @@ export default function App() {
 
   return (
     <div className="game-container">
-
+      {/* 渲染模态框 */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        winCount={settingWinCount}
+        setWinCount={setSettingWinCount}
+        difficulty={aiDifficulty}
+        setDifficulty={setAiDifficulty}
+        lang={lang}
+      />
       <div className="header">
         {/* 将重置功能绑定到标题，增加 pointer 样式 */}
         <h1 onClick={startNewGame} style={{ cursor: 'pointer' }} title={t.reset}>
@@ -228,7 +313,7 @@ export default function App() {
                 </div>
             </div>
             <div className="panel-right">
-              <button className="settings-btn" onClick={() => console.log('Open Settings')} title="Settings">
+              <button className="settings-btn" onClick={() => setShowSettings(true)} title="Settings">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
