@@ -208,7 +208,10 @@ export default function App() {
     <div className="game-container">
 
       <div className="header">
-        <h1>{t.title}</h1>
+        {/* 将重置功能绑定到标题，增加 pointer 样式 */}
+        <h1 onClick={startNewGame} style={{ cursor: 'pointer' }} title={t.reset}>
+          {t.title}
+        </h1>
         <div className="info-panel">
             <div className="panel-spacer">{/* 语言切换按钮 */}
               <button className={"language-btn"} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
@@ -225,7 +228,12 @@ export default function App() {
                 </div>
             </div>
             <div className="panel-right">
-                <button className="reset-btn-mini" onClick={startNewGame} title={t.reset}>↺</button>
+              <button className="settings-btn" onClick={() => console.log('Open Settings')} title="Settings">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+          </button>
             </div>
         </div>
         <div className="message-box">{getParsedMsg(msgObj)}</div>

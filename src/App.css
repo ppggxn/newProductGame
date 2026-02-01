@@ -186,3 +186,27 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   pointer-events: none; /* 物理禁用所有点击，防止人类手快 */
   transition: opacity 0.3s;
 }
+
+/* 鼠标悬停标题时的反馈 */
+.header h1:hover {
+  opacity: 0.8;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* 按钮样式微调 */
+.settings-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s;
+}
+
+.settings-btn:hover {
+  color: #fff;
+  transform: rotate(45deg); /* 齿轮旋转效果 */
+}
