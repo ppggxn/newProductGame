@@ -2,18 +2,21 @@ import { useState, useEffect, useMemo } from 'react';
 import './App.css';
 import { getAIMove } from './ai';
 import { translations } from './i18n';
-import { GRID_SIZE, WIN_COUNT, FACTOR_RANGE, THINKING_TIME } from './constants';
+import { GRID_SIZE, WIN_COUNT as DEFAULT_WIN_COUNT, FACTOR_RANGE, THINKING_TIME } from './constants';
 
-// --- 新增：设置模态框组件 ---
-const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang }) => {
+// --- 模态框组件 ---
+const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, onReset }) => {
   if (!isOpen) return null;
 
-  // 模拟从 localStorage 读取数据 (你可以自定义 key)
-  // 假设存储格式: { humanWins: 5, aiWins: 3, total: 10 }
   const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"humanWins":0, "aiWins":0, "total":0}');
   const winRate = stats.total > 0 ? Math.round((stats.humanWins / stats.total) * 100) : 0;
 
-  const t = translations[lang]; // 简单复用一下语言包，或者直接写中文
+  const handleWinCountChange = (num) => {
+    if (num === winCount) return;
+    setWinCount(num);
+    // 规则改变后，强制重置游戏，避免逻辑冲突
+    onReset();
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -31,15 +34,19 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
               <button
                 key={num}
                 className={`segment-btn ${winCount === num ? 'active' : ''}`}
-                onClick={() => setWinCount(num)}
+                onClick={() => handleWinCountChange(num)}
               >
                 {num}
               </button>
             ))}
           </div>
+          {/* 添加小提示 */}
+          <p style={{fontSize: '0.8rem', color: '#666', marginTop: '5px'}}>
+             * 切换规则将重新开始游戏 (Changing rule restarts game)
+          </p>
         </div>
 
-        {/* 2. AI 难度设置 */}
+        {/* ... 其他部分保持不变 (AI 难度, 统计面板) ... */}
         <div className="modal-section">
           <h3>AI 难度 (Difficulty)</h3>
           <div className="segmented-control">
@@ -48,7 +55,6 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
                 key={mode}
                 className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
                 onClick={() => setDifficulty(mode)}
-                // 暂时只允许选 Random，其他只是 UI 展示，或者你可以根据 ai.js 进度放开
                 title={mode}
               >
                 {mode === 'random' ? '随机' : mode === 'greedy' ? '贪心' : '高难'}
@@ -57,7 +63,6 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
           </div>
         </div>
 
-        {/* 3. 统计面板 */}
         <div className="modal-section">
           <h3>战绩统计 (Stats)</h3>
           <div className="stats-grid">
@@ -102,9 +107,12 @@ export default function App() {
   const [playerTypes, setPlayerTypes] = useState({ p1: 'human', p2: 'human' });
   // --- 新增 UI State ---
   const [showSettings, setShowSettings] = useState(false);
-  const [settingWinCount, setSettingWinCount] = useState(WIN_COUNT); // 暂时只控制 UI
-  const [aiDifficulty, setAiDifficulty] = useState('random'); // 暂时只控制 UI
-  // 【新增】生成高频查找映射表Value-to-Index Map (O(1) 查找)
+  // 【核心修改】settingWinCount 现在是游戏的实际规则来源
+  // 使用 DEFAULT_WIN_COUNT 作为初始值
+  const [settingWinCount, setSettingWinCount] = useState(DEFAULT_WIN_COUNT);
+  const [aiDifficulty, setAiDifficulty] = useState('random');
+
+  // 生成高频查找映射表Value-to-Index Map (O(1) 查找)
   // 仅在 board 数组引用变化（即重新开局）时重新计算
   const valueToIndexMap = useMemo(() => {
     const map = {};
@@ -135,7 +143,7 @@ export default function App() {
     // 内置延迟模拟思考过程
     const timer = setTimeout(() => performAIMove(), THINKING_TIME);
     return () => clearTimeout(timer);
-  }, [currentPlayer, playerTypes, winner, board, factors, turnCount, valueToIndexMap]);
+  }, [currentPlayer, playerTypes, winner, board, factors, turnCount, valueToIndexMap, settingWinCount]);
 
   const startNewGame = () => {
     setBoard(generateInitialBoard());
@@ -150,7 +158,7 @@ export default function App() {
 
   const performAIMove = () => {
     // 传入映射表
-    const move = getAIMove(board, factors, turnCount, valueToIndexMap);
+    const move = getAIMove(board, factors, turnCount, valueToIndexMap, settingWinCount);
     if (!move) {
       setMsgObj({ key: 'aiSurrender' });
       return;
@@ -268,13 +276,16 @@ export default function App() {
     const row = Math.floor(lastIndex / GRID_SIZE);
     const col = lastIndex % GRID_SIZE;
     const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+      // 使用当前的状态 settingWinCount
+    const targetCount = settingWinCount;
+
     for (let [dx, dy] of directions) {
       let line = [lastIndex];
       let r = row + dx, c = col + dy;
       while (isValid(r, c) && currentBoard[r * GRID_SIZE + c].owner === player) { line.push(r * GRID_SIZE + c); r += dx; c += dy; }
       r = row - dx; c = col - dy;
       while (isValid(r, c) && currentBoard[r * GRID_SIZE + c].owner === player) { line.push(r * GRID_SIZE + c); r -= dx; c -= dy; }
-      if (line.length >= WIN_COUNT) return line;
+      if (line.length >= targetCount) return line;
     }
     return null;
   };
@@ -291,6 +302,7 @@ export default function App() {
         difficulty={aiDifficulty}
         setDifficulty={setAiDifficulty}
         lang={lang}
+        onReset={startNewGame} // 传递重置函数
       />
       <div className="header">
         {/* 将重置功能绑定到标题，增加 pointer 样式 */}

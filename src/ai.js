@@ -1,14 +1,14 @@
 // src/ai.js
 
-import { GRID_SIZE, WIN_COUNT, FACTOR_RANGE } from './constants';
+import { GRID_SIZE, FACTOR_RANGE } from './constants';
 
 
 /**
  * 获取 AI 的下一步移动
  */
-export function getAIMove(board, factors, turnCount, valueToIndexMap) {
+export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWinCount) {
   // 1. 尝试贪心策略
-  const greedyMove = getGreedyMove(board, factors, turnCount, valueToIndexMap);
+  const greedyMove = getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount);
   if (greedyMove) return greedyMove;
 
   // 2. 兜底：随机策略
@@ -42,18 +42,18 @@ function getAllLegalMoves(board, factors, valueToIndexMap) {
 /**
  * 贪心策略实现
  */
-function getGreedyMove(board, factors, turnCount, valueToIndexMap) {
+function getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount) {
   if (turnCount < 2) return null;
 
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
 
   // 优先级 1: 寻找能让自己立即获胜的移动 (进攻)
-  const winningMove = possibleMoves.find(m => checkSimulatedWin(board, m.product, 'p2', valueToIndexMap));
+  const winningMove = possibleMoves.find(m => checkSimulatedWin(board, m.product, 'p2', valueToIndexMap, currentWinCount));
   if (winningMove) return winningMove;
 
   // 优先级 2: 寻找能拦截玩家获胜的移动 (防守)
   // 逻辑：如果某个格子能让玩家赢，而 AI 这一步恰好能占领它
-  const blockingMove = possibleMoves.find(m => checkSimulatedWin(board, m.product, 'p1', valueToIndexMap));
+  const blockingMove = possibleMoves.find(m => checkSimulatedWin(board, m.product, 'p1', valueToIndexMap, currentWinCount));
   if (blockingMove) return blockingMove;
 
   return null;
@@ -63,7 +63,7 @@ function getGreedyMove(board, factors, turnCount, valueToIndexMap) {
  * 核心：模拟胜负判定
  * 判断如果在 product 位置落子，player 是否会达成连子
  */
-function checkSimulatedWin(board, product, player, valueToIndexMap) {
+function checkSimulatedWin(board, product, player, valueToIndexMap, targetCount) {
   const index = valueToIndexMap[product]; // O(1) 获取索引
   if (index === undefined) return false;
 
@@ -87,7 +87,7 @@ function checkSimulatedWin(board, product, player, valueToIndexMap) {
       count++; r -= dx; c -= dy;
     }
 
-    if (count >= WIN_COUNT) return true;
+    if (count >= targetCount) return true;
   }
   return false;
 }
