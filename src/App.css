@@ -22,33 +22,48 @@ html, body {
 .header { text-align: center; width: 100%; margin-bottom: 10px; }
 h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 
+/* 确保父容器是单行网格，不许换行 */
 .info-panel {
-  display: flex;
+  display: grid;
+  /* 1fr: 左侧透明占位 | auto: 中间徽章宽度 | 1fr: 右侧容器 */
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between; /* 关键：两端对齐 */
   width: 100%;
-  position: relative;
-  margin-bottom: 5px;
+  padding: 10px 15px;
+  box-sizing: border-box;
+  gap: 10px; /* 栏目间的最小间距 */
 }
 
-/* 左右占位容器，确保中间绝对居中 */
-.panel-spacer, .panel-right {
-  width: 40px; /* 给一个固定宽度 */
-  display: flex;
-  justify-content: flex-end;
-}
-
+/* 中间容器：水平排列徽章 */
 .badges-container {
+  grid-column: 2;
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex: 1; /* 占据剩余空间 */
+  flex-direction: row; /* 强制横向 */
+  flex-wrap: nowrap;   /* 禁止徽章内部换行 */
+  align-items: center;
+  gap: 12px;
+}
+
+/* 右侧容器：强制不换行并靠右 */
+.panel-right {
+  grid-column: 3;
+  display: flex;
+  justify-content: flex-end; /* 推到最右边 */
+  align-items: center;
+  white-space: nowrap;      /* 强制文字或按钮在一行 */
+}
+
+/* 必须有一个左侧占位符，否则中间无法真正居中 */
+.panel-placeholder {
+  grid-column: 1;
+  visibility: hidden; /* 不可见但占据空间 */
 }
 
 .player-badge {
   padding: 4px 10px; border-radius: 15px; font-size: 0.8rem;
   font-weight: bold; border: 2px solid #444; transition: all 0.3s;
 }
+
 .player-badge.p1.active { border-color: var(--p1-color); color: var(--p1-color); background: rgba(255,107,107,0.1); }
 .player-badge.p2.active { border-color: var(--p2-color); color: var(--p2-color); background: rgba(78,205,196,0.1); }
 
@@ -58,34 +73,11 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   width: 30px;
   height: 30px;
   font-size: 1.2rem;
-  line-height: 1;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   padding: 0;
+  position: absolute;
+  right: 80px; /* 距离右侧边缘的距离，留出关闭按钮的位置 */
 }
-
-.language-btn:hover { color: #fff; }
-
-/* 迷你重置按钮 */
-.reset-btn-mini {
-  background: transparent;
-  color: #666;
-  border: 1px solid #555;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 1.2rem;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0;
-}
-
-.reset-btn-mini:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.1); }
 
 .message-box { min-height: 1.2em; color: #fbceb1; font-size: 0.85rem; margin-top: 5px; }
 
@@ -272,9 +264,6 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 .modal-section h3 {
   font-size: 0.9rem;
   color: #666;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* 分段控制器 (Segmented Control) */

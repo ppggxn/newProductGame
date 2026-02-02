@@ -5,7 +5,7 @@ import { translations } from './i18n';
 import { GRID_SIZE, WIN_COUNT as DEFAULT_WIN_COUNT, FACTOR_RANGE, THINKING_TIME } from './constants';
 
 // --- 模态框组件 ---
-const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, onReset }) => {
+const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, setLang, onReset }) => {
   if (!isOpen) return null;
 
   const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"humanWins":0, "aiWins":0, "total":0}');
@@ -22,13 +22,16 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>设置 (Settings)</h2>
+          <h2>{translations[lang].settings}</h2>
+          <button className={"language-btn"} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+            <svg viewBox="0 0 640 512"><path fill="currentcolor" d="M0 128C0 92.7 28.7 64 64 64H256h48 16H576c35.3.0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H320 304 256 64c-35.3.0-64-28.7-64-64V128zm320 0V384H576V128H320zM178.3 175.9c-3.2-7.2-10.4-11.9-18.3-11.9s-15.1 4.7-18.3 11.9l-64 144c-4.5 10.1.1 21.9 10.2 26.4s21.9-.1 26.4-10.2l8.9-20.1h73.6l8.9 20.1c4.5 10.1 16.3 14.6 26.4 10.2s14.6-16.3 10.2-26.4l-64-144zM160 233.2 179 276H141l19-42.8zM448 164c11 0 20 9 20 20v4h44 16c11 0 20 9 20 20s-9 20-20 20h-2l-1.6 4.5c-8.9 24.4-22.4 46.6-39.6 65.4.9.6 1.8 1.1 2.7 1.6l18.9 11.3c9.5 5.7 12.5 18 6.9 27.4s-18 12.5-27.4 6.9L467 333.8c-4.5-2.7-8.8-5.5-13.1-8.5-10.6 7.5-21.9 14-34 19.4l-3.6 1.6c-10.1 4.5-21.9-.1-26.4-10.2s.1-21.9 10.2-26.4l3.6-1.6c6.4-2.9 12.6-6.1 18.5-9.8L410 286.1c-7.8-7.8-7.8-20.5.0-28.3s20.5-7.8 28.3.0l14.6 14.6.5.5c12.4-13.1 22.5-28.3 29.8-45H448 376c-11 0-20-9-20-20s9-20 20-20h52v-4c0-11 9-20 20-20z"></path></svg>
+          </button>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
         {/* 1. 胜利条件设置 */}
         <div className="modal-section">
-          <h3>连线目标 (Win Count)</h3>
+          <h3>{translations[lang].winCount}</h3>
           <div className="segmented-control">
             {[3, 4, 5, 6].map(num => (
               <button
@@ -40,15 +43,14 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
               </button>
             ))}
           </div>
-          {/* 添加小提示 */}
           <p style={{fontSize: '0.8rem', color: '#666', marginTop: '5px'}}>
-             * 切换规则将重新开始游戏 (Changing rule restarts game)
+             * {translations[lang].warning}
           </p>
         </div>
 
-        {/* ... 其他部分保持不变 (AI 难度, 统计面板) ... */}
+        {/* AI 难度, 统计面板 */}
         <div className="modal-section">
-          <h3>AI 难度 (Difficulty)</h3>
+          <h3>{translations[lang].difficulty}</h3>
           <div className="segmented-control">
             {['random', 'greedy', 'minimax'].map(mode => (
               <button
@@ -57,22 +59,22 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
                 onClick={() => setDifficulty(mode)}
                 title={mode}
               >
-                {mode === 'random' ? '随机' : mode === 'greedy' ? '贪心' : '高难'}
+                {mode === 'random' ? translations[lang].difficultyEasy : mode === 'greedy' ? translations[lang].difficultyNormal : translations[lang].difficultyHard}
               </button>
             ))}
           </div>
         </div>
 
         <div className="modal-section">
-          <h3>战绩统计 (Stats)</h3>
+          <h3>{translations[lang].stats}</h3>
           <div className="stats-grid">
             <div className="stat-card">
               <span className="stat-value">{stats.humanWins} / {stats.total}</span>
-              <span className="stat-label">胜场 / 总局数</span>
+              <span className="stat-label">{translations[lang].statsNum}</span>
             </div>
             <div className="stat-card">
               <span className="stat-value">{winRate}%</span>
-              <span className="stat-label">人类胜率</span>
+              <span className="stat-label">{translations[lang].winRate}</span>
             </div>
           </div>
         </div>
@@ -96,7 +98,7 @@ const generateInitialBoard = () => {
 };
 
 export default function App() {
-  const [lang, setLang] = useState('en'); // 2. 语言状态
+  const [lang, setLang] = useState('en'); // 语言状态
   const [board, setBoard] = useState(() => generateInitialBoard());
   const [factors, setFactors] = useState([null, null]);
   const [activeClip, setActiveClip] = useState(null);
@@ -302,6 +304,7 @@ export default function App() {
         difficulty={aiDifficulty}
         setDifficulty={setAiDifficulty}
         lang={lang}
+        setLang={setLang}
         onReset={startNewGame} // 传递重置函数
       />
       <div className="header">
@@ -310,12 +313,7 @@ export default function App() {
           {t.title}
         </h1>
         <div className="info-panel">
-            <div className="panel-spacer">{/* 语言切换按钮 */}
-              <button className={"language-btn"} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
-                <svg viewBox="0 0 640 512"><path fill="currentcolor" d="M0 128C0 92.7 28.7 64 64 64H256h48 16H576c35.3.0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H320 304 256 64c-35.3.0-64-28.7-64-64V128zm320 0V384H576V128H320zM178.3 175.9c-3.2-7.2-10.4-11.9-18.3-11.9s-15.1 4.7-18.3 11.9l-64 144c-4.5 10.1.1 21.9 10.2 26.4s21.9-.1 26.4-10.2l8.9-20.1h73.6l8.9 20.1c4.5 10.1 16.3 14.6 26.4 10.2s14.6-16.3 10.2-26.4l-64-144zM160 233.2 179 276H141l19-42.8zM448 164c11 0 20 9 20 20v4h44 16c11 0 20 9 20 20s-9 20-20 20h-2l-1.6 4.5c-8.9 24.4-22.4 46.6-39.6 65.4.9.6 1.8 1.1 2.7 1.6l18.9 11.3c9.5 5.7 12.5 18 6.9 27.4s-18 12.5-27.4 6.9L467 333.8c-4.5-2.7-8.8-5.5-13.1-8.5-10.6 7.5-21.9 14-34 19.4l-3.6 1.6c-10.1 4.5-21.9-.1-26.4-10.2s.1-21.9 10.2-26.4l3.6-1.6c6.4-2.9 12.6-6.1 18.5-9.8L410 286.1c-7.8-7.8-7.8-20.5.0-28.3s20.5-7.8 28.3.0l14.6 14.6.5.5c12.4-13.1 22.5-28.3 29.8-45H448 376c-11 0-20-9-20-20s9-20 20-20h52v-4c0-11 9-20 20-20z"></path></svg>
-                {/*lang === 'zh' ? 'EN' : '中'*/}
-              </button>
-            </div>
+            <div className="panel-placeholder"></div>
             <div className="badges-container">
                 <div className={`player-badge p1 ${currentPlayer==='p1'?'active':''} clickable`} onClick={() => togglePlayerType('p1')}>
                     {playerTypes.p1 === 'ai' ? `🤖 ${t.ai}-1` : `👤 ${t.p1}`}

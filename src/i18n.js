@@ -1,7 +1,7 @@
 // src/i18n.js
 export const translations = {
   zh: {
-    title: "乘积博弈",
+    title: "新乘法游戏",
     p1: "玩家 1",
     p2: "玩家 2",
     ai: "人工智能",
@@ -23,7 +23,17 @@ export const translations = {
     currentProduct: "当前乘积",
     waiting: "等待...",
     aiThinkingMsg: "轮到 {{player}} (AI 思考中...)",
-    humanTurnMsg: "轮到 {{player}} (请操作)"
+    humanTurnMsg: "轮到 {{player}} ",
+    settings: "设置",
+    winCount: "几连胜利",
+    difficulty: "难度",
+    warning: "切换规则将重新开始游戏",
+    difficultyEasy: "简单",
+    difficultyNormal: "普通",
+    difficultyHard: "困难",
+    stats: "统计",
+    statsNum: "胜场 / 总局数",
+    winRate: "胜率"
   },
   en: {
     title: "New Product Game",
@@ -48,6 +58,16 @@ export const translations = {
     currentProduct: "Product",
     waiting: "Waiting...",
     aiThinkingMsg: "{{player}}'s turn (AI Thinking...)",
-    humanTurnMsg: "{{player}}'s turn (Your move)"
+    humanTurnMsg: "{{player}}'s turn",
+    settings: "Settings",
+    winCount: "Number in a row to win",
+    difficulty: "Difficulty",
+    warning: "Changing rule restarts game",
+    difficultyEasy: "Easy",
+    difficultyNormal: "Normal",
+    difficultyHard: "Hard",
+    stats: "Stats",
+    statsNum: "Win / Total",
+    winRate: "winRate"
   }
 };
