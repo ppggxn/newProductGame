@@ -75,8 +75,6 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   font-size: 1.2rem;
   cursor: pointer;
   padding: 0;
-  position: absolute;
-  right: 80px; /* 距离右侧边缘的距离，留出关闭按钮的位置 */
 }
 
 .message-box { min-height: 1.2em; color: #fbceb1; font-size: 0.85rem; margin-top: 5px; }
