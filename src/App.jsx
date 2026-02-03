@@ -146,8 +146,8 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [currentPlayer, playerTypes, winner, board, factors, turnCount, valueToIndexMap, settingWinCount]);
 
-  const startNewGame = () => {
-    setBoard(generateInitialBoard());
+  // --- 1. 提取通用的状态重置逻辑 ---
+  const resetGameStatus = () => {
     setFactors([null, null]);
     setTurnCount(0);
     setActiveClip(null);
@@ -155,6 +155,22 @@ export default function App() {
     setWinner(null);
     setWinningLine([]);
     setMsgObj({ key: 'startMsg' });
+  };
+
+  // --- 2. 硬重置：点击标题时（生成全新随机棋盘） ---
+  const startNewGame = () => {
+    setBoard(generateInitialBoard()); // 生成全新的数字布局
+    resetGameStatus();
+  };
+
+  // --- 3. 软重置：修改规则时（保留数字布局，仅清空颜色） ---
+  const restartCurrentGame = () => {
+    // 关键点：使用 map 复制当前棋盘，但将 owner 重置为 null
+    setBoard(prevBoard => prevBoard.map(cell => ({
+      ...cell,
+      owner: null
+    })));
+    resetGameStatus();
   };
 
   const performAIMove = () => {
@@ -304,7 +320,7 @@ export default function App() {
         setDifficulty={setAiDifficulty}
         lang={lang}
         setLang={setLang}
-        onReset={startNewGame} // 传递重置函数
+        onReset={restartCurrentGame} // 使用软重置，清空颜色但保留数字
       />
       <div className="header">
         {/* 将重置功能绑定到标题，增加 pointer 样式 */}
