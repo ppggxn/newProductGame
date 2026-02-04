@@ -4,17 +4,16 @@ import { getAIMove } from './ai';
 import { translations } from './i18n';
 import { GRID_SIZE, WIN_COUNT as DEFAULT_WIN_COUNT, FACTOR_RANGE, THINKING_TIME } from './constants';
 
-// --- 模态框组件 ---
+// 模态框组件
 const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, setLang, onReset }) => {
   if (!isOpen) return null;
 
   const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"humanWins":0, "aiWins":0, "total":0}');
   const winRate = stats.total > 0 ? Math.round((stats.humanWins / stats.total) * 100) : 0;
-
+  // 规则改变后，强制重置游戏，避免逻辑冲突
   const handleWinCountChange = (num) => {
-    if (num === winCount) return;
+    // if (num === winCount) return;
     setWinCount(num);
-    // 规则改变后，强制重置游戏，避免逻辑冲突
     onReset();
   };
 
@@ -106,9 +105,9 @@ export default function App() {
   const [winner, setWinner] = useState(null);
   const [winningLine, setWinningLine] = useState([]);
   const [playerTypes, setPlayerTypes] = useState({ p1: 'human', p2: 'human' });
-  // --- 新增 UI State ---
+  // UI State
   const [showSettings, setShowSettings] = useState(false);
-  // 【核心修改】settingWinCount 现在是游戏的实际规则来源
+  // settingWinCount 现在是游戏的实际规则来源
   // 使用 DEFAULT_WIN_COUNT 作为初始值
   const [settingWinCount, setSettingWinCount] = useState(DEFAULT_WIN_COUNT);
   const [aiDifficulty, setAiDifficulty] = useState('random');
@@ -123,12 +122,12 @@ export default function App() {
     return map;
   }, [board]);
 
-  // 3. 核心：msg 现在存对象
+  // msg 现在存对象
   const [msgObj, setMsgObj] = useState({ key: 'startMsg' });
 
   const t = translations[lang];
 
-  // 4. 解析消息的工具函数
+  // 解析消息的工具函数
   const getParsedMsg = (obj) => {
     let text = t[obj.key] || obj.key;
     if (obj.params) {
@@ -146,7 +145,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [currentPlayer, playerTypes, winner, board, factors, turnCount, valueToIndexMap, settingWinCount]);
 
-  // --- 1. 提取通用的状态重置逻辑 ---
+  // 提取通用的状态重置逻辑
   const resetGameStatus = () => {
     setFactors([null, null]);
     setTurnCount(0);
@@ -157,19 +156,16 @@ export default function App() {
     setMsgObj({ key: 'startMsg' });
   };
 
-  // --- 2. 硬重置：点击标题时（生成全新随机棋盘） ---
+  // 硬重置：点击标题时（生成全新随机棋盘）
   const startNewGame = () => {
     setBoard(generateInitialBoard()); // 生成全新的数字布局
     resetGameStatus();
   };
 
-  // --- 3. 软重置：修改规则时（保留数字布局，仅清空颜色） ---
+  // 软重置：修改规则时（保留数字布局，仅清空颜色）
   const restartCurrentGame = () => {
-    // 关键点：使用 map 复制当前棋盘，但将 owner 重置为 null
-    setBoard(prevBoard => prevBoard.map(cell => ({
-      ...cell,
-      owner: null
-    })));
+    // 使用 map 复制当前棋盘，但将 owner 重置为 null
+    setBoard(prevBoard => prevBoard.map(cell => ({...cell, owner: null})));
     resetGameStatus();
   };
 
@@ -378,7 +374,7 @@ export default function App() {
                     )
                 })}
             </div>
-            {/* 滑块 A/B 保持不变... */}
+            {/* 滑块 A/B 保持不变 */}
             <div className={`paperclip clip-a ${activeClip === 0 ? 'active' : ''}`} style={{ display: factors[0] ? 'flex' : 'none', left: `calc(${(factors[0] - 1) * 11.11}% + 2%)` }} onClick={(e) => { e.stopPropagation(); if (turnCount < 2 || playerTypes[currentPlayer] === 'ai') return; setActiveClip(0); setMsgObj({key:'pickA', params:{val:factors[0]}}); }}>A</div>
             <div className={`paperclip clip-b ${activeClip === 1 ? 'active' : ''}`} style={{ display: factors[1] ? 'flex' : 'none', left: `calc(${(factors[1] - 1) * 11.11}% + 2%)` }} onClick={(e) => { e.stopPropagation(); if (turnCount < 2 || playerTypes[currentPlayer] === 'ai') return; setActiveClip(1); setMsgObj({key:'pickB', params:{val:factors[1]}}); }}>B</div>
         </div>
