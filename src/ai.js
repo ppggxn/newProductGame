@@ -4,13 +4,31 @@ import { GRID_SIZE, FACTOR_RANGE } from './constants';
 /**
  * 获取 AI 的下一步移动
  */
-export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWinCount) {
-  // 1. 尝试贪心策略
-  // 在 App.jsx 传入 difficulty 参数会更好，这里暂时默认智能
-  const smartMove = getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount);
-  if (smartMove) return smartMove;
-  // 2. 随机策略兜底
-  return getRandomMove(board, factors, turnCount, valueToIndexMap);
+export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWinCount, difficulty = 'smartGreedy') {
+
+  // 根据难度路由到不同的算法函数
+  switch (difficulty) {
+    case 'random':
+      return getRandomMove(board, factors, turnCount, valueToIndexMap);
+
+    case 'greedy':
+      // 使用文件底部已有的 getGreedyMove
+      return getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount)
+             || getRandomMove(board, factors, turnCount, valueToIndexMap); // 兜底
+
+    case 'smartGreedy':
+      return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount)
+             || getRandomMove(board, factors, turnCount, valueToIndexMap);
+
+    case 'minMax':
+      // TODO: 这里目前先用 smartGreedy 顶替，等后续开发了 Minimax 算法后再替换
+      console.warn("Minimax not implemented yet, using SmartGreedy");
+      return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount)
+             || getRandomMove(board, factors, turnCount, valueToIndexMap);
+
+    default:
+      return getRandomMove(board, factors, turnCount, valueToIndexMap);
+  }
 }
 
 /**

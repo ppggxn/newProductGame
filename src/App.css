@@ -264,6 +264,22 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   color: #666;
 }
 
+.section-header-row h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.time-control {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+.time-value {
+  margin-left: 8px;
+  min-width: 30px;
+}
+
 /* 分段控制器 (Segmented Control) */
 .segmented-control {
   display: flex;
