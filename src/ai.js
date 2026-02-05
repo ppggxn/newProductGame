@@ -1,31 +1,28 @@
 // src/ai.js
-import { GRID_SIZE, FACTOR_RANGE } from './constants';
+import { GRID_SIZE, FACTOR_RANGE, AI_SEARCH_DEPTH, SCORES, PLAYER } from './constants';
 
 /**
  * 获取 AI 的下一步移动
  */
 export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWinCount, difficulty = 'smartGreedy') {
+  // --- 自动识别角色逻辑 ---
+  // 根据回合数推断：0, 2, 4... 是 P1；1, 3, 5... 是 P2
+  const aiPlayer = (turnCount % 2 === 0) ? PLAYER.P1 : PLAYER.P2;
+  const opponent = (aiPlayer === PLAYER.P1) ? PLAYER.P2 : PLAYER.P1;
 
   // 根据难度路由到不同的算法函数
   switch (difficulty) {
     case 'random':
       return getRandomMove(board, factors, turnCount, valueToIndexMap);
-
     case 'greedy':
       // 使用文件底部已有的 getGreedyMove
       return getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount)
              || getRandomMove(board, factors, turnCount, valueToIndexMap); // 兜底
-
     case 'smartGreedy':
       return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount)
              || getRandomMove(board, factors, turnCount, valueToIndexMap);
-
     case 'minMax':
-      // TODO: 这里目前先用 smartGreedy 顶替，等后续开发了 Minimax 算法后再替换
-      console.warn("Minimax not implemented yet, using SmartGreedy");
-      return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount)
-             || getRandomMove(board, factors, turnCount, valueToIndexMap);
-
+      return getMinimaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent);
     default:
       return getRandomMove(board, factors, turnCount, valueToIndexMap);
   }
@@ -261,4 +258,144 @@ function getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCou
   if (blockingMove) return blockingMove;
 
   return null;
+}
+
+
+// Minimax 入口函数
+function getMinimaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent) {
+  // 开局前两步分支极多，且策略相对固定，用贪心加速
+  if (turnCount < 2) {
+    return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount)
+           || getRandomMove(board, factors, turnCount, valueToIndexMap);
+  }
+
+  // 执行搜索
+  const result = minimax(
+    board,
+    factors,
+    AI_SEARCH_DEPTH,
+    true,        // isMaximizing: 第一层永远是 AI 自己想最大化得分
+    -Infinity,   // Alpha
+    Infinity,    // Beta
+    valueToIndexMap,
+    targetCount,
+    me,
+    opponent
+  );
+
+  return result.move || getRandomMove(board, factors, turnCount, valueToIndexMap);
+}
+
+/**
+ * 核心递归函数
+ */
+function minimax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent) {
+  const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
+
+  // 1. 基础情况：无路可走
+  if (possibleMoves.length === 0) {
+    // 如果是我的回合没路走，我输了；如果是对手没路走，我赢了
+    return { score: isMaximizing ? SCORES.LOSE : SCORES.WIN };
+  }
+
+  // 2. 基础情况：达到搜索深度，进行静态评估
+  if (depth === 0) {
+    return { score: evaluateBoard(board, targetCount, me, opponent) };
+  }
+
+  const currentPlayer = isMaximizing ? me : opponent;
+  let bestMove = null;
+
+  if (isMaximizing) {
+    let maxEval = -Infinity;
+    for (const move of possibleMoves) {
+      // 模拟落子
+      const idx = valueToIndexMap[move.product];
+      const newBoard = [...board];
+      newBoard[idx] = { ...newBoard[idx], owner: me };
+
+      const newFactors = [...factors];
+      newFactors[move.clipIndex] = move.value;
+
+      // 快速胜利检查
+      if (checkSimulatedWin(board, move.product, me, valueToIndexMap, targetCount)) {
+        return { score: SCORES.WIN - depth, move: move }; // 减去 depth 是为了让 AI 倾向于更早获胜
+      }
+
+      const evalRes = minimax(newBoard, newFactors, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+
+      if (evalRes.score > maxEval) {
+        maxEval = evalRes.score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, evalRes.score);
+      if (beta <= alpha) break; // Beta 剪枝
+    }
+    return { score: maxEval, move: bestMove };
+
+  } else {
+    let minEval = Infinity;
+    for (const move of possibleMoves) {
+      const idx = valueToIndexMap[move.product];
+      const newBoard = [...board];
+      newBoard[idx] = { ...newBoard[idx], owner: opponent };
+
+      const newFactors = [...factors];
+      newFactors[move.clipIndex] = move.value;
+
+      // 快速失败检查（对手赢了）
+      if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
+        return { score: SCORES.LOSE + depth, move: move };
+      }
+
+      const evalRes = minimax(newBoard, newFactors, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+
+      if (evalRes.score < minEval) {
+        minEval = evalRes.score;
+        bestMove = move;
+      }
+      beta = Math.min(beta, evalRes.score);
+      if (beta <= alpha) break; // Alpha 剪枝
+    }
+    return { score: minEval, move: bestMove };
+  }
+}
+
+/**
+ * 静态评估函数：给当前局面打分
+ */
+function evaluateBoard(board, targetCount, me, opponent) {
+  let totalScore = 0;
+
+  // 简单的启发式评分：
+  // 遍历棋盘上每个格子，如果是自己的，看它周围连成线的潜力
+  for (let i = 0; i < board.length; i++) {
+    if (board[i].owner === me) {
+      totalScore += getCellScore(board, i, me, targetCount);
+    } else if (board[i].owner === opponent) {
+      totalScore -= getCellScore(board, i, opponent, targetCount) * 1.2; // 稍微多给对手一点权重，倾向于防守
+    }
+  }
+  return totalScore;
+}
+
+// 辅助：评估单个格子的潜力
+function getCellScore(board, index, player, targetCount) {
+  let score = 0;
+  const row = Math.floor(index / GRID_SIZE);
+  const col = index % GRID_SIZE;
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+  for (let [dx, dy] of directions) {
+    let count = 1;
+    // 这里简单计算连子长度，实际可增加对“两端是否被堵死”的判断
+    let r = row + dx, c = col + dy;
+    while (isValid(r, c) && board[r * GRID_SIZE + c].owner === player) { count++; r += dx; c += dy; }
+    r = row - dx; c = col - dy;
+    while (isValid(r, c) && board[r * GRID_SIZE + c].owner === player) { count++; r -= dx; c -= dy; }
+
+    // 权重：2连子=10分，3连子=100分，以此类推
+    score += Math.pow(10, count);
+  }
+  return score;
 }
