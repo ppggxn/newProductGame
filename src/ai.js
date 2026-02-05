@@ -32,64 +32,64 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
  * 高级贪心策略
  * 给每一个合法的移动打分，选分最高的。
  */
-function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount) {
+function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount, aiPlayer, opponent) {
   if (turnCount < 2) return null;
 
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
-
-  // 如果无路可走
   if (possibleMoves.length === 0) return null;
 
-  // 评分权重配置
   const SCORES = {
-    WIN: 100000,         // 能赢，绝对优先
-    BLOCK: 20000,        // 能堵住对手赢，次优先
-    GIVE_WIN: -50000,    // 下完这步对手能赢，绝对禁止（自杀）
-    CREATE_THREAT: 500,  // 能形成 N-1 连珠（听牌）
-    EXTEND_CHAIN: 100,   // 能延长连珠
-    CENTER_BONUS: 20,    // 占据中心
+    WIN: 100000,
+    BLOCK: 20000,
+    GIVE_WIN: -50000,
+    CREATE_THREAT: 500,
+    EXTEND_CHAIN: 100,
+    CENTER_BONUS: 20,
   };
 
-  // 对每个移动进行评分
   possibleMoves.forEach(move => {
     move.score = 0;
 
-    // 1. 进攻：这步能赢吗？
-    if (checkSimulatedWin(board, move.product, 'p2', valueToIndexMap, targetCount)) {
+    // 1. 进攻：这步能赢吗？(使用传入的 aiPlayer)
+    if (checkSimulatedWin(board, move.product, aiPlayer, valueToIndexMap, targetCount)) {
       move.score += SCORES.WIN;
     }
 
-    // 2. 防守：这步是对手的必胜点吗？（堵路）
-    // 逻辑：如果我不占这个格子，对手下回合能占这个格子赢吗？
-    // 注意：这里只是简单的位置判断，更复杂的防守是看滑块。
-    // 简单的理解：如果这个位置是空位，且对手占了能赢，那我占了它就有防守价值。
-    if (checkSimulatedWin(board, move.product, 'p1', valueToIndexMap, targetCount)) {
+    // 2. 防守：堵路 (使用传入的 opponent)
+    if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
       move.score += SCORES.BLOCK;
     }
 
-    // 3. 风险检查 (关键优化)：
-    // 我走完这步后，滑块变成了 [move.value, existing_other_factor]。
-    // 对手下回合能动其中一个滑块，制造出任何能赢的乘积吗？
-    const nextFactors = [factors[0], factors[1]];
-    nextFactors[move.clipIndex] = move.value; // 模拟移动后的滑块状态
+    // --- [核心修复开始] ---
 
-    // 检查对手是否能利用新的滑块组合获胜
-    if (canOpponentWinNextTurn(board, nextFactors, valueToIndexMap, targetCount)) {
+    // 3. 风险检查：
+    // 我们必须模拟“我下在这之后”的世界，而不是检查“当前”的世界。
+    const nextFactors = [...factors];
+    nextFactors[move.clipIndex] = move.value;
+
+    // 创建一个模拟棋盘 (Shallow copy 数组，并在特定索引处更新对象)
+    const nextBoard = [...board];
+    const idx = valueToIndexMap[move.product];
+    if (idx !== undefined) {
+        // 在模拟棋盘上，这个位置已经被 AI 占据了！
+        // 这样 canOpponentWinNextTurn 就不会认为对手还能下在这里
+        nextBoard[idx] = { ...nextBoard[idx], owner: aiPlayer };
+    }
+
+    // 将 nextBoard 传入检查函数
+    if (canOpponentWinNextTurn(nextBoard, nextFactors, valueToIndexMap, targetCount, opponent)) {
       move.score += SCORES.GIVE_WIN;
     }
 
-    // 4. 连珠潜力 (启发式)
-    // 计算如果不赢，这一步能带来多长的连线
-    const chainLength = getLongestChainAfterMove(board, move.product, 'p2', valueToIndexMap);
+    // 4. 连珠潜力
+    const chainLength = getLongestChainAfterMove(board, move.product, aiPlayer, valueToIndexMap);
     if (chainLength === targetCount - 1) {
-      move.score += SCORES.CREATE_THREAT; // 听牌
+      move.score += SCORES.CREATE_THREAT;
     } else {
       move.score += chainLength * SCORES.EXTEND_CHAIN;
     }
 
     // 5. 中心控制
-    // 6x6 棋盘，中间的格子 (row 2-3, col 2-3) 价值更高
-    const idx = valueToIndexMap[move.product];
     const r = Math.floor(idx / GRID_SIZE);
     const c = idx % GRID_SIZE;
     if (r >= 2 && r <= 3 && c >= 2 && c <= 3) {
@@ -97,10 +97,7 @@ function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCo
     }
   });
 
-  // 根据分数降序排列，取最高分
-  // 加入一点随机性：如果有多个分数相同的最高分，随机选一个，避免走法僵化
   possibleMoves.sort((a, b) => b.score - a.score);
-
   const bestScore = possibleMoves[0].score;
   const bestMoves = possibleMoves.filter(m => m.score === bestScore);
 
@@ -111,14 +108,13 @@ function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCo
  * 预测对手下一回合是否能赢
  * @param currentFactors AI 移动后的滑块位置 [f1, f2]
  */
-function canOpponentWinNextTurn(board, currentFactors, valueToIndexMap, targetCount) {
-  // 模拟对手的回合：对手是 P1 (Human)
-  // 对手可以移动 A 或 B
+function canOpponentWinNextTurn(board, currentFactors, valueToIndexMap, targetCount, opponentPlayer) {
   const opponentMoves = getAllLegalMoves(board, currentFactors, valueToIndexMap);
 
-  // 如果对手有任何一步能赢，返回 true
   return opponentMoves.some(move =>
-    checkSimulatedWin(board, move.product, 'p1', valueToIndexMap, targetCount)
+    // 这里 board 已经是 nextBoard (模拟过的)，所以如果 AI 占了关键位，
+    // getAllLegalMoves 会认为那个位置不合法(已占用)，或者 checkSimulatedWin 会失败。
+    checkSimulatedWin(board, move.product, opponentPlayer, valueToIndexMap, targetCount)
   );
 }
 
