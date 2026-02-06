@@ -9,7 +9,6 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
   // 根据回合数推断：0, 2, 4... 是 P1；1, 3, 5... 是 P2
   const aiPlayer = (turnCount % 2 === 0) ? PLAYER.P1 : PLAYER.P2;
   const opponent = (aiPlayer === PLAYER.P1) ? PLAYER.P2 : PLAYER.P1;
-
   // 根据难度路由到不同的算法函数
   switch (difficulty) {
     case 'random':
@@ -21,8 +20,8 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
       // [修复] 传入 aiPlayer 和 opponent
       return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent)
              || getRandomMove(board, factors, turnCount, valueToIndexMap);
-    case 'minMax':
-      return getMinimaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent);
+    case 'minmax':
+      return getMinmaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent);
     default:
       return getRandomMove(board, factors, turnCount, valueToIndexMap);
   }
@@ -232,17 +231,17 @@ function getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCou
   return null;
 }
 
-// --- Minimax入口函数 ---
+// --- Minmax入口函数 ---
 
-function getMinimaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent) {
+function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent) {
   // 开局前两步分支极多，使用 smartGreedy 加速
-  // [修复] 确保这里的 smartGreedy 也传入正确的 me/opponent，避免开局就送
-  if (turnCount < 2) {
-    return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent)
-           || getRandomMove(board, factors, turnCount, valueToIndexMap);
-  }
+  // 确保这里的 smartGreedy 也传入正确的 me/opponent，避免开局就送
+  // if (turnCount < 2) {
+  //   return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent)
+  //          || getRandomMove(board, factors, turnCount, valueToIndexMap);
+  // }
 
-  const result = minimax(
+  const result = minmax(
     board,
     factors,
     AI_SEARCH_DEPTH,
@@ -258,8 +257,16 @@ function getMinimaxMove(board, factors, turnCount, valueToIndexMap, targetCount,
   return result.move || getRandomMove(board, factors, turnCount, valueToIndexMap);
 }
 
-function minimax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent) {
+function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent) {
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
+  // 按照位置权重对移动进行预排序
+  possibleMoves.sort((a, b) => {
+    const idxA = valueToIndexMap[a.product];
+    const idxB = valueToIndexMap[b.product];
+    const weightA = idxA !== undefined ? POSITIONAL_WEIGHTS[idxA] : 0;
+    const weightB = idxB !== undefined ? POSITIONAL_WEIGHTS[idxB] : 0;
+    return weightB - weightA; // 权重高的排在前面
+  });
 
   if (possibleMoves.length === 0) {
     return { score: isMaximizing ? SCORES.LOSE : SCORES.WIN };
@@ -288,7 +295,7 @@ function minimax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexM
         return { score: SCORES.WIN - depth, move: move };
       }
 
-      const evalRes = minimax(newBoard, newFactors, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+      const evalRes = minmax(newBoard, newFactors, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
 
       if (evalRes.score > maxEval) {
         maxEval = evalRes.score;
@@ -315,7 +322,7 @@ function minimax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexM
         return { score: SCORES.LOSE + depth, move: move };
       }
 
-      const evalRes = minimax(newBoard, newFactors, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+      const evalRes = minmax(newBoard, newFactors, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
 
       if (evalRes.score < minEval) {
         minEval = evalRes.score;
@@ -336,7 +343,9 @@ function evaluateBoard(board, currentFactors, targetCount, me, opponent, valueTo
   const opponentMoves = getAllLegalMoves(board, currentFactors, valueToIndexMap);
   for (const move of opponentMoves) {
     if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
-      return SCORES.LOSE - 100; // 极高代价，防止“送人头”
+      // return SCORES.LOSE - 100; // 极高代价，防止“送人头”
+      console.log("SCORES.LOSE * 0.9", SCORES.LOSE * 0.9);
+      return SCORES.LOSE * 0.9; // 发现对手能秒杀，直接判定为极差的棋
     }
   }
 
@@ -351,7 +360,7 @@ function evaluateBoard(board, currentFactors, targetCount, me, opponent, valueTo
       totalScore -= POSITIONAL_WEIGHTS[i] * 2;
     }
   }
-
+  // console.log(SCORES);
   return totalScore;
 }
 
@@ -375,6 +384,7 @@ function getCellScore(board, index, player, targetCount) {
       } else if (cell.owner === null) {
         openEnds++;    // 发现一个空位
         possible++;
+        score += 5;
         break;         // 探测到第一个空位即停止，算作“活口”
       } else {
         break;         // 敌方棋子，此路不通
@@ -392,6 +402,7 @@ function getCellScore(board, index, player, targetCount) {
       } else if (cell.owner === null) {
         openEnds++;    // 又发现一个空位
         possible++;
+        score += 5;
         break;
       } else {
         break;

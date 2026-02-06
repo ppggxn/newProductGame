@@ -60,7 +60,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
             </h3>
           </div>
           <div className="segmented-control">
-            {['random', 'greedy', 'smartGreedy', 'minimax'].map(mode => (
+            {['random', 'greedy', 'smartGreedy', 'minmax'].map(mode => (
               <button
                 key={mode}
                 className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
