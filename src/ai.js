@@ -17,7 +17,7 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
       return getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent)
              || getRandomMove(board, factors, turnCount, valueToIndexMap);
     case 'smartGreedy':
-      // [修复] 传入 aiPlayer 和 opponent
+      // 传入 aiPlayer 和 opponent
       return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent)
              || getRandomMove(board, factors, turnCount, valueToIndexMap);
     case 'minmax':
@@ -28,7 +28,7 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
 }
 
 /**
- * [修复版] 高级贪心策略
+ * 高级贪心策略
  */
 function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount, aiPlayer, opponent) {
   if (turnCount < 2) return null;
@@ -104,7 +104,7 @@ function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCo
 }
 
 /**
- * [修复版] 预测对手下一回合是否能赢
+ * 预测对手下一回合是否能赢
  * 增加了 opponentPlayer 参数，且接收的是 nextBoard
  */
 function canOpponentWinNextTurn(board, currentFactors, valueToIndexMap, targetCount, opponentPlayer) {
@@ -166,11 +166,23 @@ function getAllLegalMoves(board, factors, valueToIndexMap) {
 }
 
 /**
- * 核心：模拟胜负判定
+ * 核心：模拟落子并判定是否胜利（内部会把落子写入一个复制的棋盘）
+ * 好处：调用方无需负责提前创建 nextBoard，直接调用即可得到“落子后”的结果
  */
 function checkSimulatedWin(board, product, player, valueToIndexMap, targetCount) {
   const index = valueToIndexMap[product];
-  if (index === undefined) return false;
+  if (index === undefined) return false; // 非棋盘格子，不能胜利
+
+  // 复制棋盘并模拟落子（浅拷贝足够：cell用对象包裹）
+  const nextBoard = [...board];
+  const existing = nextBoard[index];
+  if (existing) {
+    // 保留其他属性，仅替换 owner
+    nextBoard[index] = { ...existing, owner: player };
+  } else {
+    // 万一没有 cell（不太可能），也创建一个占位
+    nextBoard[index] = { value: product, owner: player };
+  }
 
   const row = Math.floor(index / GRID_SIZE);
   const col = index % GRID_SIZE;
@@ -178,13 +190,23 @@ function checkSimulatedWin(board, product, player, valueToIndexMap, targetCount)
 
   for (let [dx, dy] of directions) {
     let count = 1;
+
+    // 正方向
     let r = row + dx, c = col + dy;
-    while (isValid(r, c) && getOwnerAt(board, r, c, index, player) === player) {
-      count++; r += dx; c += dy;
+    while (isValid(r, c)) {
+      const owner = nextBoard[r * GRID_SIZE + c]?.owner;
+      if (owner === player) {
+        count++; r += dx; c += dy;
+      } else break;
     }
+
+    // 反方向
     r = row - dx; c = col - dy;
-    while (isValid(r, c) && getOwnerAt(board, r, c, index, player) === player) {
-      count++; r -= dx; c -= dy;
+    while (isValid(r, c)) {
+      const owner = nextBoard[r * GRID_SIZE + c]?.owner;
+      if (owner === player) {
+        count++; r -= dx; c -= dy;
+      } else break;
     }
 
     if (count >= targetCount) return true;
@@ -344,7 +366,7 @@ function evaluateBoard(board, currentFactors, targetCount, me, opponent, valueTo
   for (const move of opponentMoves) {
     if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
       // return SCORES.LOSE - 100; // 极高代价，防止“送人头”
-      console.log("SCORES.LOSE * 0.9", SCORES.LOSE * 0.9);
+      // console.log("SCORES.LOSE * 0.9", SCORES.LOSE * 0.9);
       return SCORES.LOSE * 0.9; // 发现对手能秒杀，直接判定为极差的棋
     }
   }
