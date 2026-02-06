@@ -1,5 +1,5 @@
 // src/ai.js
-import { GRID_SIZE, FACTOR_RANGE, AI_SEARCH_DEPTH, SCORES, PLAYER } from './constants';
+import { GRID_SIZE, FACTOR_RANGE, AI_SEARCH_DEPTH, SCORES, PLAYER, POSITIONAL_WEIGHTS } from './constants';
 
 /**
  * 获取 AI 的下一步移动
@@ -266,7 +266,7 @@ function minimax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexM
   }
 
   if (depth === 0) {
-    return { score: evaluateBoard(board, targetCount, me, opponent) };
+    return { score: evaluateBoard(board, factors, targetCount, me, opponent, valueToIndexMap) };
   }
 
   let bestMove = null;
@@ -328,15 +328,30 @@ function minimax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexM
   }
 }
 
-function evaluateBoard(board, targetCount, me, opponent) {
+function evaluateBoard(board, currentFactors, targetCount, me, opponent, valueToIndexMap) {
   let totalScore = 0;
-  for (let i = 0; i < board.length; i++) {
-    if (board[i].owner === me) {
-      totalScore += getCellScore(board, i, me, targetCount);
-    } else if (board[i].owner === opponent) {
-      totalScore -= getCellScore(board, i, opponent, targetCount) * 1.5; // 加大防守权重
+
+  // 1. 基础检查：如果对手下一手必胜，这就是臭棋
+  // 获取对手在当前滑块状态下的所有合法移动
+  const opponentMoves = getAllLegalMoves(board, currentFactors, valueToIndexMap);
+  for (const move of opponentMoves) {
+    if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
+      return SCORES.LOSE - 100; // 极高代价，防止“送人头”
     }
   }
+
+  // 2. 扫描棋盘评分
+  for (let i = 0; i < board.length; i++) {
+    const cell = board[i];
+    if (cell.owner === me) {
+      totalScore += getCellScore(board, i, me, targetCount);
+      totalScore += POSITIONAL_WEIGHTS[i] * 2; // 加入位置权重
+    } else if (cell.owner === opponent) {
+      totalScore -= getCellScore(board, i, opponent, targetCount) * 2.5; // 加大防守权重
+      totalScore -= POSITIONAL_WEIGHTS[i] * 2;
+    }
+  }
+
   return totalScore;
 }
 
@@ -344,17 +359,62 @@ function getCellScore(board, index, player, targetCount) {
   let score = 0;
   const row = Math.floor(index / GRID_SIZE);
   const col = index % GRID_SIZE;
-  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]]; // 横、竖、正斜、反斜
 
   for (let [dx, dy] of directions) {
-    let count = 1;
-    let r = row + dx, c = col + dy;
-    while (isValid(r, c) && board[r * GRID_SIZE + c].owner === player) { count++; r += dx; c += dy; }
-    r = row - dx; c = col - dy;
-    while (isValid(r, c) && board[r * GRID_SIZE + c].owner === player) { count++; r -= dx; c -= dy; }
+    let count = 1;      // 当前连续棋子数（包括自己）
+    let openEnds = 0;   // 两端空位数（决定潜力）
+    let possible = 1;   // 该方向上总共能连成线的潜力空间
 
-    // 简单的指数级评分
-    if (count > 1) score += Math.pow(10, count);
+    // --- 1. 正向探测 ---
+    let r = row + dx, c = col + dy;
+    while (isValid(r, c)) {
+      const cell = board[r * GRID_SIZE + c];
+      if (cell.owner === player) {
+        count++;
+      } else if (cell.owner === null) {
+        openEnds++;    // 发现一个空位
+        possible++;
+        break;         // 探测到第一个空位即停止，算作“活口”
+      } else {
+        break;         // 敌方棋子，此路不通
+      }
+      possible++;
+      r += dx; c += dy;
+    }
+
+    // --- 2. 反向探测 ---
+    r = row - dx; c = col - dy; // 往相反方向走
+    while (isValid(r, c)) {
+      const cell = board[r * GRID_SIZE + c];
+      if (cell.owner === player) {
+        count++;
+      } else if (cell.owner === null) {
+        openEnds++;    // 又发现一个空位
+        possible++;
+        break;
+      } else {
+        break;
+      }
+      possible++;
+      r -= dx; c -= dy;
+    }
+
+    // --- 3. 评分逻辑升级 ---
+    // 如果总空间不足以连成 targetCount，则该方向分值为 0
+    if (possible < targetCount) continue;
+
+    if (count >= targetCount) {
+      score += 10000; // 已经连成线
+    } else if (count === targetCount - 1) {
+      // 听牌状态：如果是“活四”（两头通），分极高；如果是一头通，分略低
+      score += (openEnds === 2) ? 2000 : 500;
+    } else if (count === 2) {
+      // 两个棋子：两头通给 100，一头通给 30
+      score += (openEnds === 2) ? 100 : 30;
+    } else {
+      score += 10; // 孤子
+    }
   }
   return score;
 }

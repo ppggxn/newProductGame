@@ -19,3 +19,12 @@ export const SCORES = {
   LOSE: -100000,
   DRAW: 0
 };
+
+export const POSITIONAL_WEIGHTS = [
+  2, 3, 3, 3, 3, 2,
+  3, 4, 5, 5, 4, 3,
+  3, 5, 8, 8, 5, 3,
+  3, 5, 8, 8, 5, 3,
+  3, 4, 5, 5, 4, 3,
+  2, 3, 3, 3, 3, 2
+];
