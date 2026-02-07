@@ -34,7 +34,11 @@ export const translations = {
     difficultyHard: "困难",
     stats: "统计",
     statsNum: "胜场 / 总局数",
-    winRate: "胜率"
+    wins: '胜',
+    draws: '平局',
+    totalGames: '总局数',
+    winRate: '胜率',
+    stats: '游戏统计'
   },
   en: {
     title: "New Product Game",
@@ -70,6 +74,10 @@ export const translations = {
     difficultyHard: "Hard",
     stats: "Stats",
     statsNum: "Win / Total",
-    winRate: "winRate"
+    wins: 'Wins',
+    draws: 'Draws',
+    totalGames: 'Total',
+    winRate: 'Win Rate',
+    stats: 'Statistics'
   }
 };

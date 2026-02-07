@@ -7,9 +7,21 @@ import { GRID_SIZE, WIN_COUNT as DEFAULT_WIN_COUNT, FACTOR_RANGE, THINKING_TIME 
 // 模态框组件
 const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, setLang, onReset, thinkingTime, setThinkingTime }) => {
   if (!isOpen) return null;
+  const stats = JSON.parse(localStorage.getItem('npg_stats') ||
+  '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+  // 计算各自胜率
+  const p1WinRate = stats.total > 0 ? Math.round((stats.p1Wins / stats.total) * 100) : 0;
+  const p2WinRate = stats.total > 0 ? Math.round((stats.p2Wins / stats.total) * 100) : 0;
+  const resetStats = () => {
+    localStorage.setItem('npg_stats', JSON.stringify({
+      p1Wins: 0,
+      p2Wins: 0,
+      draws: 0,
+      total: 0
+    }));
+    window.location.reload();
+  };
 
-  const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"humanWins":0, "aiWins":0, "total":0}');
-  const winRate = stats.total > 0 ? Math.round((stats.humanWins / stats.total) * 100) : 0;
   // 规则改变后，强制重置游戏，避免逻辑冲突
   const handleWinCountChange = (num) => {
     setWinCount(num);
@@ -76,19 +88,59 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
         </div>
         {/* 统计面板 */}
         <div className="modal-section">
-          <h3>{translations[lang].stats}</h3>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <span className="stat-value">{stats.humanWins} / {stats.total}</span>
-              <span className="stat-label">{translations[lang].statsNum}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{winRate}%</span>
-              <span className="stat-label">{translations[lang].winRate}</span>
-            </div>
+          <div className="stats-header">
+            <h3>{translations[lang].stats}</h3>
+            {/* 重置按钮 */}
+            <button
+              className="reset-stats-btn"
+              onClick={resetStats}>↻</button>
           </div>
-        </div>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <span className="stat-value">{stats.p1Wins}</span>
+                <span className="stat-label">P1 {translations[lang].wins}</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-value">{stats.p2Wins}</span>
+                <span className="stat-label">P2 {translations[lang].wins}</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-value">{stats.draws}</span>
+                <span className="stat-label">{translations[lang].draws}</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-value">{stats.total}</span>
+                <span className="stat-label">{translations[lang].totalGames}</span>
+              </div>
+            </div>
 
+            {/* 胜率条形图 */}
+            <div style={{ marginTop: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '5px' }}>
+                <span>P1: {p1WinRate}%</span>
+                <span>P2: {p2WinRate}%</span>
+              </div>
+              <div style={{
+                height: '8px',
+                background: '#e0e0e0',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${p1WinRate}%`,
+                  background: '#ff6b6b',
+                  height: '100%',
+                  float: 'left'
+                }} />
+                <div style={{
+                  width: `${p2WinRate}%`,
+                  background: '#4ecdc4',
+                  height: '100%',
+                  float: 'left'
+                }} />
+              </div>
+            </div>
+        </div>
       </div>
     </div>
   );
@@ -280,13 +332,34 @@ export default function App() {
     setBoard(newBoard);
 
     const winLine = getWinningLine(newBoard, index, playerWhoMoved);
+    // 在 attemptMove 函数中，当检测到胜利时：
     if (winLine) {
       setWinner(playerWhoMoved);
       setWinningLine(winLine);
       setMsgObj({ key: 'win', params: { player: t[playerWhoMoved] } });
+
+      // === 新增：更新统计数据 ===
+      const stats = JSON.parse(localStorage.getItem('npg_stats') ||
+        '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+
+      if (playerWhoMoved === 'p1') {
+        stats.p1Wins++;
+      } else if (playerWhoMoved === 'p2') {
+        stats.p2Wins++;
+      }
+      stats.total++;
+
+      localStorage.setItem('npg_stats', JSON.stringify(stats));
     } else if (newBoard.every(cell => cell.owner !== null)) {
       setWinner('draw');
       setMsgObj({ key: 'draw' });
+
+      // === 平局统计 ===
+      const stats = JSON.parse(localStorage.getItem('npg_stats') ||
+        '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+      stats.draws++;
+      stats.total++;
+      localStorage.setItem('npg_stats', JSON.stringify(stats));
     } else {
       const next = playerWhoMoved === 'p1' ? 'p2' : 'p1';
       setCurrentPlayer(next);

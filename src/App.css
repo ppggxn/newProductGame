@@ -280,6 +280,12 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   min-width: 30px;
 }
 
+.stats-header {
+  display: flex;
+  justify-content: space-between; /* 这会使 h3 靠左，按钮靠右 */
+  align-items: center; /* 垂直居中对齐 */
+}
+
 /* 分段控制器 (Segmented Control) */
 .segmented-control {
   display: flex;
