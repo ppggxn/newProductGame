@@ -13,7 +13,7 @@ export const PLAYER = {
 };
 
 // parameters for miniMax
-export const AI_SEARCH_DEPTH = 4;
+export const AI_SEARCH_DEPTH = 5;
 export const SCORES = {
   WIN: 100000,
   LOSE: -100000,

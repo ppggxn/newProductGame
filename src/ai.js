@@ -280,30 +280,41 @@ function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, 
 }
 
 function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent) {
+  // 1. 获取所有合法移动
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
-  // 按照位置权重对移动进行预排序
+
+  // 2. 终局判断：无路可走
+  if (possibleMoves.length === 0) {
+    // 如果轮到我走但没路了，我输了；如果轮到对手走没路了，我赢了
+    return { score: isMaximizing ? SCORES.LOSE : SCORES.WIN };
+  }
+
+  // 3. 达到搜索深度限制，进行静态估值
+  if (depth === 0) {
+    return { score: evaluateBoard(board, targetCount, me, opponent) };
+  }
+
+  // 4. 预排序优化 (启发式)：优先搜索位置权重高的点，提高剪枝效率
   possibleMoves.sort((a, b) => {
     const idxA = valueToIndexMap[a.product];
     const idxB = valueToIndexMap[b.product];
     const weightA = idxA !== undefined ? POSITIONAL_WEIGHTS[idxA] : 0;
     const weightB = idxB !== undefined ? POSITIONAL_WEIGHTS[idxB] : 0;
-    return weightB - weightA; // 权重高的排在前面
+    return weightB - weightA;
   });
-
-  if (possibleMoves.length === 0) {
-    return { score: isMaximizing ? SCORES.LOSE : SCORES.WIN };
-  }
-
-  if (depth === 0) {
-    return { score: evaluateBoard(board, factors, targetCount, me, opponent, valueToIndexMap) };
-  }
 
   let bestMove = null;
 
   if (isMaximizing) {
     let maxEval = -Infinity;
     for (const move of possibleMoves) {
-      // 模拟状态
+      // --- 剪枝优化 A: 必胜检查 ---
+      // 如果这一步能直接赢，立刻走这一步，不再搜索其他分支
+      if (checkSimulatedWin(board, move.product, me, valueToIndexMap, targetCount)) {
+        return { score: SCORES.WIN - (AI_SEARCH_DEPTH - depth), move: move }; // 越早赢分越高
+      }
+
+      // 模拟移动
       const idx = valueToIndexMap[move.product];
       const newBoard = [...board];
       if (idx !== undefined) {
@@ -312,11 +323,7 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
       const newFactors = [...factors];
       newFactors[move.clipIndex] = move.value;
 
-      // 剪枝优化：如果这步直接赢了，不用再搜了
-      if (checkSimulatedWin(board, move.product, me, valueToIndexMap, targetCount)) {
-        return { score: SCORES.WIN - depth, move: move };
-      }
-
+      // 递归
       const evalRes = minmax(newBoard, newFactors, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
 
       if (evalRes.score > maxEval) {
@@ -324,13 +331,21 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
         bestMove = move;
       }
       alpha = Math.max(alpha, evalRes.score);
-      if (beta <= alpha) break;
+      if (beta <= alpha) break; // Beta 剪枝
     }
     return { score: maxEval, move: bestMove };
 
   } else {
+    // Minimizing (对手回合)
     let minEval = Infinity;
     for (const move of possibleMoves) {
+      // --- 剪枝优化 B: 对手必胜检查 ---
+      // 如果这一步对手能直接赢，对手一定会走这一步，返回极低分
+      if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
+        return { score: SCORES.LOSE + (AI_SEARCH_DEPTH - depth), move: move }; // 越晚输分越高（拖延战术）
+      }
+
+      // 模拟移动
       const idx = valueToIndexMap[move.product];
       const newBoard = [...board];
       if (idx !== undefined) {
@@ -339,11 +354,7 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
       const newFactors = [...factors];
       newFactors[move.clipIndex] = move.value;
 
-      // 剪枝优化：如果对手这步直接赢了，返回极低分
-      if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
-        return { score: SCORES.LOSE + depth, move: move };
-      }
-
+      // 递归
       const evalRes = minmax(newBoard, newFactors, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
 
       if (evalRes.score < minEval) {
@@ -351,80 +362,76 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
         bestMove = move;
       }
       beta = Math.min(beta, evalRes.score);
-      if (beta <= alpha) break;
+      if (beta <= alpha) break; // Alpha 剪枝
     }
     return { score: minEval, move: bestMove };
   }
 }
 
-function evaluateBoard(board, currentFactors, targetCount, me, opponent, valueToIndexMap) {
+/**
+ * 修正后的静态评估函数
+ * 移除了错误的“下一手必胜检查”，专注于评估盘面优劣
+ */
+function evaluateBoard(board, targetCount, me, opponent) {
   let totalScore = 0;
 
-  // 1. 基础检查：如果对手下一手必胜，这就是臭棋
-  // 获取对手在当前滑块状态下的所有合法移动
-  const opponentMoves = getAllLegalMoves(board, currentFactors, valueToIndexMap);
-  for (const move of opponentMoves) {
-    if (checkSimulatedWin(board, move.product, opponent, valueToIndexMap, targetCount)) {
-      // return SCORES.LOSE - 100; // 极高代价，防止“送人头”
-      // console.log("SCORES.LOSE * 0.9", SCORES.LOSE * 0.9);
-      return SCORES.LOSE * 0.9; // 发现对手能秒杀，直接判定为极差的棋
-    }
-  }
-
-  // 2. 扫描棋盘评分
   for (let i = 0; i < board.length; i++) {
     const cell = board[i];
+    // 增加位置权重的比重，鼓励占据中心
     if (cell.owner === me) {
       totalScore += getCellScore(board, i, me, targetCount);
-      totalScore += POSITIONAL_WEIGHTS[i] * 2; // 加入位置权重
+      totalScore += POSITIONAL_WEIGHTS[i] * 5;
     } else if (cell.owner === opponent) {
-      totalScore -= getCellScore(board, i, opponent, targetCount) * 2.5; // 加大防守权重
-      totalScore -= POSITIONAL_WEIGHTS[i] * 2;
+      // 防守系数：稍微调高对手分数的扣除比例，让AI更倾向于破坏对手的好局
+      totalScore -= getCellScore(board, i, opponent, targetCount) * 3.0;
+      totalScore -= POSITIONAL_WEIGHTS[i] * 5;
     }
   }
-  // console.log(SCORES);
   return totalScore;
 }
 
+/**
+ * 单元格评分逻辑 (保持大部分不变，微调数值)
+ */
 function getCellScore(board, index, player, targetCount) {
   let score = 0;
   const row = Math.floor(index / GRID_SIZE);
   const col = index % GRID_SIZE;
-  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]]; // 横、竖、正斜、反斜
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
 
   for (let [dx, dy] of directions) {
-    let count = 1;      // 当前连续棋子数（包括自己）
-    let openEnds = 0;   // 两端空位数（决定潜力）
-    let possible = 1;   // 该方向上总共能连成线的潜力空间
+    let count = 1;
+    let openEnds = 0;
+    let possible = 1;
 
-    // --- 1. 正向探测 ---
+    // 正向
     let r = row + dx, c = col + dy;
     while (isValid(r, c)) {
       const cell = board[r * GRID_SIZE + c];
       if (cell.owner === player) {
         count++;
       } else if (cell.owner === null) {
-        openEnds++;    // 发现一个空位
+        openEnds++;
         possible++;
-        score += 5;
-        break;         // 探测到第一个空位即停止，算作“活口”
+        // score += 2; // 稍微降低纯空位的分数，聚焦于连线
+        break;
       } else {
-        break;         // 敌方棋子，此路不通
+        break;
       }
       possible++;
       r += dx; c += dy;
     }
 
-    // --- 2. 反向探测 ---
-    r = row - dx; c = col - dy; // 往相反方向走
+    // 反向
+    r = row - dx; c = col - dy;
     while (isValid(r, c)) {
       const cell = board[r * GRID_SIZE + c];
       if (cell.owner === player) {
         count++;
       } else if (cell.owner === null) {
-        openEnds++;    // 又发现一个空位
+        openEnds++;
         possible++;
-        score += 5;
+        // score += 2;
         break;
       } else {
         break;
@@ -433,20 +440,20 @@ function getCellScore(board, index, player, targetCount) {
       r -= dx; c -= dy;
     }
 
-    // --- 3. 评分逻辑升级 ---
-    // 如果总空间不足以连成 targetCount，则该方向分值为 0
+    // 如果总空间不足以连成 targetCount，则该方向无价值
     if (possible < targetCount) continue;
 
+    // 评分阶梯优化
     if (count >= targetCount) {
-      score += 10000; // 已经连成线
+      score += 100000; // 连成胜利
     } else if (count === targetCount - 1) {
-      // 听牌状态：如果是“活四”（两头通），分极高；如果是一头通，分略低
-      score += (openEnds === 2) ? 2000 : 500;
-    } else if (count === 2) {
-      // 两个棋子：两头通给 100，一头通给 30
-      score += (openEnds === 2) ? 100 : 30;
+      // 致命威胁 (3连/2连)：两头通的分数极高，必须处理
+      score += (openEnds === 2) ? 5000 : 1500;
+    } else if (count === targetCount - 2) {
+       // 比如连了2个（目标4），或者1个（目标3）
+      score += (openEnds === 2) ? 200 : 50;
     } else {
-      score += 10; // 孤子
+      score += 10;
     }
   }
   return score;
