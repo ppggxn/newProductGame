@@ -190,14 +190,12 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   color: #888;
   cursor: pointer;
   padding: 5px;
-  display: flex;
   align-items: center;
-  transition: color 0.3s;
+  font-size: 30px;
 }
 
 .settings-btn:hover {
-  color: #fff;
-  transform: rotate(45deg); /* 齿轮旋转效果 */
+  transform: rotate(150deg); /* 齿轮旋转效果 */
 }
 
 /* --- App.css 新增部分 --- */
@@ -342,4 +340,47 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.win-rate-container {
+  font-family: Arial, sans-serif;
+  margin: 10px 0;
+}
+
+.win-rate-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 5px;
+}
+
+.win-rate {
+  color: #333;
+  font-weight: bold;
+}
+
+.win-rate-bar-container {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.win-rate-bar-inner {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.win-rate-bar-p1 {
+  background: #ff6b6b;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.win-rate-bar-p2 {
+  background: #4ecdc4;
+  height: 100%;
+  transition: width 0.5s ease;
 }

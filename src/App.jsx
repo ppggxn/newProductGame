@@ -1,3 +1,4 @@
+import LanguageIcon from './assets/LanguageIcon.svg';
 import './App.css';
 import { useState, useEffect, useMemo } from 'react';
 import { getAIMove } from './ai';
@@ -33,7 +34,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <button className={"language-btn"} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
-            <svg viewBox="0 0 640 512"><path fill="currentcolor" d="M0 128C0 92.7 28.7 64 64 64H256h48 16H576c35.3.0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H320 304 256 64c-35.3.0-64-28.7-64-64V128zm320 0V384H576V128H320zM178.3 175.9c-3.2-7.2-10.4-11.9-18.3-11.9s-15.1 4.7-18.3 11.9l-64 144c-4.5 10.1.1 21.9 10.2 26.4s21.9-.1 26.4-10.2l8.9-20.1h73.6l8.9 20.1c4.5 10.1 16.3 14.6 26.4 10.2s14.6-16.3 10.2-26.4l-64-144zM160 233.2 179 276H141l19-42.8zM448 164c11 0 20 9 20 20v4h44 16c11 0 20 9 20 20s-9 20-20 20h-2l-1.6 4.5c-8.9 24.4-22.4 46.6-39.6 65.4.9.6 1.8 1.1 2.7 1.6l18.9 11.3c9.5 5.7 12.5 18 6.9 27.4s-18 12.5-27.4 6.9L467 333.8c-4.5-2.7-8.8-5.5-13.1-8.5-10.6 7.5-21.9 14-34 19.4l-3.6 1.6c-10.1 4.5-21.9-.1-26.4-10.2s.1-21.9 10.2-26.4l3.6-1.6c6.4-2.9 12.6-6.1 18.5-9.8L410 286.1c-7.8-7.8-7.8-20.5.0-28.3s20.5-7.8 28.3.0l14.6 14.6.5.5c12.4-13.1 22.5-28.3 29.8-45H448 376c-11 0-20-9-20-20s9-20 20-20h52v-4c0-11 9-20 20-20z"></path></svg>
+            <img src={LanguageIcon} alt="🌐"/>
           </button>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
@@ -88,54 +89,47 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
             <h3>{translations[lang].stats}</h3>
             {/* 重置按钮 */}
             <button
-              className="reset-stats-btn"
+              className="settings-btn"
               onClick={resetStats}>↻</button>
           </div>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <span className="stat-value">{stats.p1Wins}</span>
-                <span className="stat-label">P1 {translations[lang].wins}</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{stats.p2Wins}</span>
-                <span className="stat-label">P2 {translations[lang].wins}</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{stats.draws}</span>
-                <span className="stat-label">{translations[lang].draws}</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{stats.total}</span>
-                <span className="stat-label">{translations[lang].totalGames}</span>
-              </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <span className="stat-value">{stats.p1Wins}</span>
+              <span className="stat-label">P1 {translations[lang].wins}</span>
             </div>
+            <div className="stat-card">
+              <span className="stat-value">{stats.p2Wins}</span>
+              <span className="stat-label">P2 {translations[lang].wins}</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-value">{stats.draws}</span>
+              <span className="stat-label">{translations[lang].draws}</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-value">{stats.total}</span>
+              <span className="stat-label">{translations[lang].totalGames}</span>
+            </div>
+          </div>
 
             {/* 胜率条形图 */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '5px' }}>
-                <span>P1: {p1WinRate}%</span>
-                <span>P2: {p2WinRate}%</span>
-              </div>
-              <div style={{
-                height: '8px',
-                background: '#e0e0e0',
-                borderRadius: '4px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${p1WinRate}%`,
-                  background: '#ff6b6b',
-                  height: '100%',
-                  float: 'left'
-                }} />
-                <div style={{
-                  width: `${p2WinRate}%`,
-                  background: '#4ecdc4',
-                  height: '100%',
-                  float: 'left'
-                }} />
+          <div className="win-rate-container">
+            <div className="win-rate-header">
+              <span className="win-rate">{translations[lang].p1}: {p1WinRate}%</span>
+              <span className="win-rate">{translations[lang].p2}: {p1WinRate}%</span>
+            </div>
+            <div className="win-rate-bar-container">
+              <div className="win-rate-bar-inner">
+                <div
+                  className="win-rate-bar-p1"
+                  style={{ width: `${p1WinRate}%` }}
+                />
+                <div
+                  className="win-rate-bar-p2"
+                  style={{ width: `${p1WinRate}%` }}
+                />
               </div>
             </div>
+          </div>
         </div>
       </div>
     </div>
@@ -424,10 +418,7 @@ export default function App() {
             </div>
             <div className="panel-right">
               <button className="settings-btn" onClick={() => setShowSettings(true)} title="Settings">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
+              ⚙
           </button>
             </div>
         </div>
@@ -444,7 +435,7 @@ export default function App() {
 
       <div className={`controls-area ${playerTypes[currentPlayer] === 'ai' ? 'ai-turn' : ''}`}>
         <p className="product-display">
-            {t.currentProduct}:
+            {t.currentProduct}&nbsp;:&nbsp;
             <span className="math-text">
               {factors[0] && factors[1] ? `${factors[0]} × ${factors[1]} = ${factors[0]*factors[1]}` : t.waiting}
             </span>
