@@ -52,9 +52,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
               </button>
             ))}
           </div>
-          <p style={{fontSize: '0.8rem', color: '#666', marginTop: '5px'}}>
-             * {translations[lang].warning}
-          </p>
+          <p className="message-box">* {translations[lang].warning}</p>
         </div>
 
         {/* AI 思考时间，难度*/}
@@ -64,9 +62,8 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
               {translations[lang].difficulty}
               <span className="time-control">⚡
                 <input type="range" min="0" max="5" step="1"
-                  value={thinkingTime / 1000} // 毫秒转秒显示
-                  onChange={(e) => setThinkingTime(Number(e.target.value) * 1000)}
-                />
+                  value={thinkingTime / 1000}
+                  onChange={(e) => setThinkingTime(Number(e.target.value) * 1000)}/>
                 <span className="time-value">{thinkingTime / 1000}s</span>
               </span>
             </h3>
@@ -77,8 +74,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
                 key={mode}
                 className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
                 onClick={() => setDifficulty(mode)}
-                title={mode}
-              >
+                title={mode}>
                 {mode === 'random' ? translations[lang].difficultyEasy :
                  mode === 'greedy' ? translations[lang].difficultyNormal :
                  mode === 'smartGreedy' ? translations[lang].difficultyMedium : translations[lang].difficultyHard}
@@ -115,7 +111,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
             </div>
 
             {/* 胜率条形图 */}
-            <div style={{ marginTop: '15px' }}>
+            <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '5px' }}>
                 <span>P1: {p1WinRate}%</span>
                 <span>P2: {p2WinRate}%</span>
@@ -239,6 +235,11 @@ export default function App() {
     const move = getAIMove(board, factors, turnCount, valueToIndexMap, settingWinCount, aiDifficulty);
     if (!move) {
       setMsgObj({ key: 'aiSurrender' });
+      // 更新统计数据
+      const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+      turnCount % 2 === 0 ? stats.p2Wins++ : stats.p1Wins++;
+      stats.total++;
+      localStorage.setItem('npg_stats', JSON.stringify(stats));
       return;
     }
     const { clipIndex, value } = move;
@@ -266,7 +267,6 @@ export default function App() {
 
   const isProductOccupied = (val) => {
     const index = valueToIndexMap[val];
-    // 增加可选链 ?. 确保安全
     return board[index]?.owner !== null;
   };
 
@@ -338,7 +338,7 @@ export default function App() {
       setWinningLine(winLine);
       setMsgObj({ key: 'win', params: { player: t[playerWhoMoved] } });
 
-      // === 新增：更新统计数据 ===
+      // 更新统计数据
       const stats = JSON.parse(localStorage.getItem('npg_stats') ||
         '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
 
@@ -354,7 +354,7 @@ export default function App() {
       setWinner('draw');
       setMsgObj({ key: 'draw' });
 
-      // === 平局统计 ===
+      // 平局统计
       const stats = JSON.parse(localStorage.getItem('npg_stats') ||
         '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
       stats.draws++;
@@ -368,6 +368,7 @@ export default function App() {
         key: nextType === 'ai' ? 'aiThinkingMsg' : 'humanTurnMsg',
         params: { player: t[next] }
       });
+      setTurnCount(turnCount + 1);
     }
   };
 

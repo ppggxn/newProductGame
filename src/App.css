@@ -1,5 +1,4 @@
 /* App.css */
-/* ...保留之前的 :root, html, body, #root, .game-container 等基础设置... */
 :root {
   --p1-color: #ff6b6b;
   --p2-color: #4ecdc4;
@@ -77,7 +76,7 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   padding: 0;
 }
 
-.message-box { min-height: 1.2em; color: #fbceb1; font-size: 0.85rem; margin-top: 5px; }
+.message-box { min-height: 1.2em; color: #ea3fce; font-size: 0.85rem; margin-top: 5px; }
 
 /* --- 棋盘 --- */
 .board {
