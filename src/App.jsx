@@ -115,7 +115,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
           <div className="win-rate-container">
             <div className="win-rate-header">
               <span className="win-rate">{translations[lang].p1}: {p1WinRate}%</span>
-              <span className="win-rate">{translations[lang].p2}: {p1WinRate}%</span>
+              <span className="win-rate">{translations[lang].p2}: {p2WinRate}%</span>
             </div>
             <div className="win-rate-bar-container">
               <div className="win-rate-bar-inner">
@@ -125,7 +125,7 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
                 />
                 <div
                   className="win-rate-bar-p2"
-                  style={{ width: `${p1WinRate}%` }}
+                  style={{ width: `${p2WinRate}%` }}
                 />
               </div>
             </div>
