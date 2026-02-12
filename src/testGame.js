@@ -1,6 +1,4 @@
 // testGame.js
-// 这里的 import 语法需要 package.json 支持 type: module，或者把后缀改为 .mjs
-// 为了简单测试，假设你已经在项目中配置好了 ES6 模块支持
 import GameEngine from './gameLogic.js';
 
 console.log("=== Starting New Product Game Simulation ===");

@@ -275,14 +275,14 @@ function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, 
     valueToIndexMap,
     targetCount,
     me,
-    opponent，
+    opponent,
     nn
   );
 
   return result.move || getRandomMove(board, factors, turnCount, valueToIndexMap);
 }
 
-function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponentn, nn) {
+function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent, nn) {
   // 1. 获取所有合法移动
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
 
@@ -334,7 +334,7 @@ function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, v
       newFactors[move.clipIndex] = move.value;
 
       // 递归
-      const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+      const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent, nn);
 
       if (evalRes.score > maxEval) {
         maxEval = evalRes.score;
@@ -365,7 +365,7 @@ function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, v
       newFactors[move.clipIndex] = move.value;
 
       // 递归
-      const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+      const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent, nn);
 
       if (evalRes.score < minEval) {
         minEval = evalRes.score;
