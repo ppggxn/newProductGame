@@ -1,5 +1,6 @@
 // src/ai.js
 import { GRID_SIZE, FACTOR_RANGE, AI_SEARCH_DEPTH, SCORES, PLAYER, POSITIONAL_WEIGHTS } from './constants';
+import { evaluateBoardNN } from './neural_net';
 
 /**
  * 获取 AI 的下一步移动
@@ -21,7 +22,7 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
       return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent)
              || getRandomMove(board, factors, turnCount, valueToIndexMap);
     case 'minmax':
-      return getMinmaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent);
+      return getMinmaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent, false);
     default:
       return getRandomMove(board, factors, turnCount, valueToIndexMap);
   }
@@ -254,8 +255,8 @@ function getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCou
 }
 
 // --- Minmax入口函数 ---
-
-function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent) {
+// nn = true表示使用神经网络
+function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent, nn = false) {
   // 开局前两步分支极多，使用 smartGreedy 加速
   // 确保这里的 smartGreedy 也传入正确的 me/opponent，避免开局就送
   // if (turnCount < 2) {
@@ -266,6 +267,7 @@ function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, 
   const result = minmax(
     board,
     factors,
+    turnCount,
     AI_SEARCH_DEPTH,
     true,        // isMaximizing
     -Infinity,   // Alpha
@@ -273,13 +275,14 @@ function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, 
     valueToIndexMap,
     targetCount,
     me,
-    opponent
+    opponent，
+    nn
   );
 
   return result.move || getRandomMove(board, factors, turnCount, valueToIndexMap);
 }
 
-function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent) {
+function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponentn, nn) {
   // 1. 获取所有合法移动
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
 
@@ -289,9 +292,16 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
     return { score: isMaximizing ? SCORES.LOSE : SCORES.WIN };
   }
 
-  // 3. 达到搜索深度限制，进行静态估值
+  // 3. 达到搜索深度限制，进行估值
   if (depth === 0) {
-    return { score: evaluateBoard(board, targetCount, me, opponent) };
+    if (nn) {
+        return { score: evaluateBoard(board, targetCount, me, opponent) };
+    }
+      else {
+        const winProb = evaluateBoardNN(board, factors, currentTurn, targetCount, me);
+        return { score: (winProb * 20000) - 10000 };
+    }
+
   }
 
   // 4. 预排序优化 (启发式)：优先搜索位置权重高的点，提高剪枝效率
@@ -324,7 +334,7 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
       newFactors[move.clipIndex] = move.value;
 
       // 递归
-      const evalRes = minmax(newBoard, newFactors, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+      const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent);
 
       if (evalRes.score > maxEval) {
         maxEval = evalRes.score;
@@ -355,7 +365,7 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
       newFactors[move.clipIndex] = move.value;
 
       // 递归
-      const evalRes = minmax(newBoard, newFactors, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
+      const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, true, alpha, beta, valueToIndexMap, targetCount, me, opponent);
 
       if (evalRes.score < minEval) {
         minEval = evalRes.score;
@@ -369,8 +379,7 @@ function minmax(board, factors, depth, isMaximizing, alpha, beta, valueToIndexMa
 }
 
 /**
- * 修正后的静态评估函数
- * 移除了错误的“下一手必胜检查”，专注于评估盘面优劣
+ * 静态评估函数,评估盘面优劣
  */
 function evaluateBoard(board, targetCount, me, opponent) {
   let totalScore = 0;
@@ -391,7 +400,7 @@ function evaluateBoard(board, targetCount, me, opponent) {
 }
 
 /**
- * 单元格评分逻辑 (保持大部分不变，微调数值)
+ * 单元格评分逻辑 (后续可调数值)
  */
 function getCellScore(board, index, player, targetCount) {
   let score = 0;
