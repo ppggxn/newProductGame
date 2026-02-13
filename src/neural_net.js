@@ -1,6 +1,7 @@
 // src/neural_net.js
-import weights from './model_weights.json';
-import { GRID_SIZE } from './constants';
+// import weights from './model_weights.json';
+import weights from './model_weights.json' with { type: 'json' };
+import { GRID_SIZE } from './constants.js';
 
 /**
  * 简单的矩阵运算库 (不依赖外部库)

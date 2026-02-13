@@ -1,30 +1,27 @@
 // src/ai.js
-import { GRID_SIZE, FACTOR_RANGE, AI_SEARCH_DEPTH, SCORES, PLAYER, POSITIONAL_WEIGHTS } from './constants';
-import { evaluateBoardNN } from './neural_net';
+import { GRID_SIZE, FACTOR_RANGE, AI_SEARCH_DEPTH, SCORES, PLAYER, POSITIONAL_WEIGHTS } from './constants.js';
+import { evaluateBoardNN } from './neural_net.js';
 
 /**
  * 获取 AI 的下一步移动
  */
-export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWinCount, difficulty = 'smartGreedy') {
+export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWinCount, difficulty) {
   // --- 自动识别角色逻辑 ---
   // 根据回合数推断：0, 2, 4... 是 P1；1, 3, 5... 是 P2
   const aiPlayer = (turnCount % 2 === 0) ? PLAYER.P1 : PLAYER.P2;
   const opponent = (aiPlayer === PLAYER.P1) ? PLAYER.P2 : PLAYER.P1;
   // 根据难度路由到不同的算法函数
   switch (difficulty) {
-    case 'random':
+    case 1:
       return getRandomMove(board, factors, turnCount, valueToIndexMap);
-    case 'greedy':
-      return getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent)
-             || getRandomMove(board, factors, turnCount, valueToIndexMap);
-    case 'smartGreedy':
-      // 传入 aiPlayer 和 opponent
-      return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent)
-             || getRandomMove(board, factors, turnCount, valueToIndexMap);
-    case 'minmax':
+    case 2:
+      return getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent) || getRandomMove(board, factors, turnCount, valueToIndexMap);
+    case 3:
+      return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent) || getRandomMove(board, factors, turnCount, valueToIndexMap);
+    case 4:
       return getMinmaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent, false);
-    default:
-      return getRandomMove(board, factors, turnCount, valueToIndexMap);
+    case 5:
+      return getMinmaxMove(board, factors, turnCount, valueToIndexMap, currentWinCount, aiPlayer, opponent, true);
   }
 }
 
@@ -256,12 +253,10 @@ function getGreedyMove(board, factors, turnCount, valueToIndexMap, currentWinCou
 
 // --- Minmax入口函数 ---
 // nn = true表示使用神经网络
-function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent, nn = false) {
-  // 开局前两步分支极多，使用 smartGreedy 加速
-  // 确保这里的 smartGreedy 也传入正确的 me/opponent，避免开局就送
+function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent, nn) {
+  // 开局前两步分支极多，使用 random 加速
   // if (turnCount < 2) {
-  //   return getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount, me, opponent)
-  //          || getRandomMove(board, factors, turnCount, valueToIndexMap);
+  //   return getRandomMove(board, factors, turnCount, valueToIndexMap);
   // }
 
   const result = minmax(
@@ -284,9 +279,10 @@ function getMinmaxMove(board, factors, turnCount, valueToIndexMap, targetCount, 
 
 function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, valueToIndexMap, targetCount, me, opponent, nn) {
   // 1. 获取所有合法移动
+  // 注意：开局getAllLegalMoves为null
   const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
-
   // 2. 终局判断：无路可走
+
   if (possibleMoves.length === 0) {
     // 如果轮到我走但没路了，我输了；如果轮到对手走没路了，我赢了
     return { score: isMaximizing ? SCORES.LOSE : SCORES.WIN };
@@ -295,13 +291,12 @@ function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, v
   // 3. 达到搜索深度限制，进行估值
   if (depth === 0) {
     if (nn) {
-        return { score: evaluateBoard(board, targetCount, me, opponent) };
+      const winProb = evaluateBoardNN(board, factors, currentTurn, targetCount, me);
+      return { score: (winProb * 20000) - 10000 };
     }
-      else {
-        const winProb = evaluateBoardNN(board, factors, currentTurn, targetCount, me);
-        return { score: (winProb * 20000) - 10000 };
+    else {
+      return { score: evaluateBoard(board, targetCount, me, opponent) };
     }
-
   }
 
   // 4. 预排序优化 (启发式)：优先搜索位置权重高的点，提高剪枝效率
@@ -323,7 +318,6 @@ function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, v
       if (checkSimulatedWin(board, move.product, me, valueToIndexMap, targetCount)) {
         return { score: SCORES.WIN - (AI_SEARCH_DEPTH - depth), move: move }; // 越早赢分越高
       }
-
       // 模拟移动
       const idx = valueToIndexMap[move.product];
       const newBoard = [...board];
@@ -332,7 +326,6 @@ function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, v
       }
       const newFactors = [...factors];
       newFactors[move.clipIndex] = move.value;
-
       // 递归
       const evalRes = minmax(newBoard, newFactors, currentTurn + 1, depth - 1, false, alpha, beta, valueToIndexMap, targetCount, me, opponent, nn);
 
@@ -343,8 +336,9 @@ function minmax(board, factors, currentTurn, depth, isMaximizing, alpha, beta, v
       alpha = Math.max(alpha, evalRes.score);
       if (beta <= alpha) break; // Beta 剪枝
     }
+    // console.log(maxEval);
+    // console.log(bestMove);
     return { score: maxEval, move: bestMove };
-
   } else {
     // Minimizing (对手回合)
     let minEval = Infinity;

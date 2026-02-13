@@ -70,15 +70,11 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
             </h3>
           </div>
           <div className="segmented-control">
-            {['random', 'greedy', 'smartGreedy', 'minmax'].map(mode => (
+            {[1, 2, 3, 4, 5].map(mode => (
               <button
                 key={mode}
                 className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
-                onClick={() => setDifficulty(mode)}
-                title={mode}>
-                {mode === 'random' ? translations[lang].difficultyEasy :
-                 mode === 'greedy' ? translations[lang].difficultyNormal :
-                 mode === 'smartGreedy' ? translations[lang].difficultyMedium : translations[lang].difficultyHard}
+                onClick={() => setDifficulty(mode)}>{mode}
               </button>
             ))}
           </div>
@@ -164,7 +160,7 @@ export default function App() {
   // settingWinCount 现在是游戏的实际规则来源
   // 使用 DEFAULT_WIN_COUNT 作为初始值
   const [settingWinCount, setSettingWinCount] = useState(DEFAULT_WIN_COUNT);
-  const [aiDifficulty, setAiDifficulty] = useState('random');
+  const [aiDifficulty, setAiDifficulty] = useState(1);
   const [thinkingTime, setThinkingTime] = useState(THINKING_TIME);
 
   // 生成高频查找映射表Value-to-Index Map (O(1) 查找)
