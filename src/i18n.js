@@ -31,8 +31,6 @@ export const translations = {
     stats: "统计",
     statsNum: "胜场 / 总局数",
     wins: '胜',
-    draws: '平局',
-    totalGames: '总局数',
     winRate: '胜率',
     stats: '游戏统计'
   },
@@ -67,8 +65,6 @@ export const translations = {
     stats: "Stats",
     statsNum: "Win / Total",
     wins: 'Wins',
-    draws: 'Draws',
-    totalGames: 'Total',
     winRate: 'Win Rate',
     stats: 'Statistics'
   }

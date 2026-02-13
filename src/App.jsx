@@ -9,7 +9,7 @@ import { GRID_SIZE, WIN_COUNT as DEFAULT_WIN_COUNT, FACTOR_RANGE, THINKING_TIME 
 const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, setLang, onReset, thinkingTime, setThinkingTime }) => {
   if (!isOpen) return null;
   const stats = JSON.parse(localStorage.getItem('npg_stats') ||
-  '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+  '{"p1Wins":0, "p2Wins":0, "total":0}');
   // 计算各自胜率
   const p1WinRate = stats.total > 0 ? Math.round((stats.p1Wins / stats.total) * 100) : 0;
   const p2WinRate = stats.total > 0 ? Math.round((stats.p2Wins / stats.total) * 100) : 0;
@@ -17,7 +17,6 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
     localStorage.setItem('npg_stats', JSON.stringify({
       p1Wins: 0,
       p2Wins: 0,
-      draws: 0,
       total: 0
     }));
     window.location.reload();
@@ -96,14 +95,6 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
             <div className="stat-card">
               <span className="stat-value">{stats.p2Wins}</span>
               <span className="stat-label">P2 {translations[lang].wins}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{stats.draws}</span>
-              <span className="stat-label">{translations[lang].draws}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{stats.total}</span>
-              <span className="stat-label">{translations[lang].totalGames}</span>
             </div>
           </div>
 
@@ -226,7 +217,7 @@ export default function App() {
     if (!move) {
       setMsgObj({ key: 'aiSurrender' });
       // 更新统计数据
-      const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+      const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "total":0}');
       turnCount % 2 === 0 ? stats.p2Wins++ : stats.p1Wins++;
       stats.total++;
       localStorage.setItem('npg_stats', JSON.stringify(stats));
@@ -330,7 +321,7 @@ export default function App() {
 
       // 更新统计数据
       const stats = JSON.parse(localStorage.getItem('npg_stats') ||
-        '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
+        '{"p1Wins":0, "p2Wins":0, "total":0}');
 
       if (playerWhoMoved === 'p1') {
         stats.p1Wins++;
@@ -339,16 +330,6 @@ export default function App() {
       }
       stats.total++;
 
-      localStorage.setItem('npg_stats', JSON.stringify(stats));
-    } else if (newBoard.every(cell => cell.owner !== null)) {
-      setWinner('draw');
-      setMsgObj({ key: 'draw' });
-
-      // 平局统计
-      const stats = JSON.parse(localStorage.getItem('npg_stats') ||
-        '{"p1Wins":0, "p2Wins":0, "draws":0, "total":0}');
-      stats.draws++;
-      stats.total++;
       localStorage.setItem('npg_stats', JSON.stringify(stats));
     } else {
       const next = playerWhoMoved === 'p1' ? 'p2' : 'p1';
