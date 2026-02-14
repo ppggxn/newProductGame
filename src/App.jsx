@@ -189,7 +189,7 @@ export default function App() {
 
   // 当轮到人类玩家且回合数大于等于15时，检查是否有合法移动
   useEffect(() => {
-    if (playerTypes[currentPlayer] === 'human' && !winner && turnCount >= 15) {
+    if (playerTypes[currentPlayer] === 'human' && !winner && turnCount >= 7) {
       const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
       if (possibleMoves.length === 0) {
         handleSurrender(currentPlayer);
@@ -314,10 +314,7 @@ export default function App() {
       newFactors[activeClip] = num;
       const newProduct = newFactors[0] * newFactors[1];
 
-      if (isProductOccupied(newProduct)) {
-        setMsgObj({ key: 'forbidden', params: { val: newProduct } });
-        return;
-      }
+      if (isProductOccupied(newProduct)) return;
 
       setFactors(newFactors);
       setActiveClip(null);
@@ -458,7 +455,7 @@ export default function App() {
                     ${isFactor ? 'is-factor' : ''}
                     ${isPending ? 'is-pending' : ''}
                     ${isForbidden ? 'forbidden' : ''}`
-                  } onClick={() => !isForbidden && handleNumberClick(num)}>
+                  } onClick={() => handleNumberClick(num)}>
                   {num}
                 </div>
               )
