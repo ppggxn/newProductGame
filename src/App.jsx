@@ -276,6 +276,7 @@ export default function App() {
     if (playerTypes[currentPlayer] === 'ai' && !winner) return;
     if (winner) return;
 
+    // 第一阶段：开局设置两个 Factor
     if (turnCount === 0) {
       setFactors([num, null]);
       setTurnCount(1);
@@ -284,46 +285,45 @@ export default function App() {
       return;
     }
     if (turnCount === 1) {
-      const potProd = factors[0] * num;
-      if (isProductOccupied(potProd)) {
-        setMsgObj({ key: 'occupied', params: { val: potProd } });
+      setFactors([factors[0], num]);
+      setTurnCount(2);
+      attemptMove([factors[0], num], 'p2');
+      return;
+    }
+
+    // 第二阶段：常规回合 - 选择与替换
+    const factorIndex = factors.indexOf(num);
+
+    // 1. 如果已经选中了一个数字，且再次点击它 -> 取消选择
+    if (activeClip !== null && factors[activeClip] === num) {
+      setActiveClip(null);
+      setMsgObj({ key: 'humanTurnMsg', params: { player: t[currentPlayer] } });
+      return;
+    }
+
+    // 2. 如果还没选中，且点击的是当前两个 Factor 之一 -> 准备移动它 (Pending)
+    if (activeClip === null && factorIndex !== -1) {
+      // 处理两个 Factor 相同的情况，默认选第一个
+      setActiveClip(factorIndex);
+      return;
+    }
+
+    // 3. 如果已经选中了一个，且点击的是轨道上的新数字 -> 尝试移动
+    if (activeClip !== null) {
+      const newFactors = [...factors];
+      newFactors[activeClip] = num;
+      const newProduct = newFactors[0] * newFactors[1];
+
+      if (isProductOccupied(newProduct)) {
+        setMsgObj({ key: 'forbidden', params: { val: newProduct } });
         return;
       }
-      const newFactors = [factors[0], num];
+
       setFactors(newFactors);
-      setTurnCount(2);
-      attemptMove(newFactors, 'p2');
+      setActiveClip(null);
+      attemptMove(newFactors, currentPlayer);
       return;
     }
-
-    if (activeClip === null) {
-      if (num === factors[0] && num !== factors[1]) {
-        setActiveClip(0);
-        setMsgObj({ key: 'pickA', params: { val: num } });
-      } else if (num === factors[1] && num !== factors[0]) {
-        setActiveClip(1);
-        setMsgObj({ key: 'pickB', params: { val: num } });
-      } else if (num === factors[0] && num === factors[1]) {
-        setActiveClip(0);
-        setMsgObj({ key: 'pickEither' });
-      } else {
-        setMsgObj({ key: 'needSelect' });
-      }
-      return;
-    }
-
-    const newFactors = [...factors];
-    newFactors[activeClip] = num;
-    const newProduct = newFactors[0] * newFactors[1];
-
-    if (isProductOccupied(newProduct)) {
-      setMsgObj({ key: 'forbidden', params: { val: newProduct } });
-      return;
-    }
-
-    setFactors(newFactors);
-    setActiveClip(null);
-    attemptMove(newFactors, currentPlayer);
   };
 
   const attemptMove = (currentFactors, playerWhoMoved) => {
@@ -439,22 +439,31 @@ export default function App() {
             </span>
         </p>
         <div className="track-container">
-            <div className="track-numbers">
-                {FACTOR_RANGE.map(num => {
-                    let isForbidden = false;
-                    if (activeClip !== null && !winner && playerTypes[currentPlayer] === 'human') {
-                        if (isProductOccupied(num * factors[activeClip === 0 ? 1 : 0])) isForbidden = true;
-                    }
-                    return (
-                        <div key={num} className={`track-number ${isForbidden ? 'forbidden' : ''}`} onClick={() => !isForbidden && handleNumberClick(num)}>
-                            {num}
-                        </div>
-                    )
-                })}
-            </div>
-            {/* 滑块 A/B 保持不变 */}
-            <div className={`paperclip clip-a ${activeClip === 0 ? 'active' : ''}`} style={{ display: factors[0] ? 'flex' : 'none', left: `calc(${(factors[0] - 1) * 11.11}% + 2%)` }} onClick={(e) => { e.stopPropagation(); if (turnCount < 2 || playerTypes[currentPlayer] === 'ai') return; setActiveClip(0); setMsgObj({key:'pickA', params:{val:factors[0]}}); }}>A</div>
-            <div className={`paperclip clip-b ${activeClip === 1 ? 'active' : ''}`} style={{ display: factors[1] ? 'flex' : 'none', left: `calc(${(factors[1] - 1) * 11.11}% + 2%)` }} onClick={(e) => { e.stopPropagation(); if (turnCount < 2 || playerTypes[currentPlayer] === 'ai') return; setActiveClip(1); setMsgObj({key:'pickB', params:{val:factors[1]}}); }}>B</div>
+          <div className="track-numbers">
+            {FACTOR_RANGE.map(num => {
+              // 逻辑判定
+              const isFactor = factors.includes(num);
+              const isPending = activeClip !== null && factors[activeClip] === num;
+              // 判定是否因为该移动会导致格子被占用而禁用
+              let isForbidden = false;
+              if (activeClip !== null && !isPending && !winner && playerTypes[currentPlayer] === 'human') {
+                  const testFactors = [...factors];
+                  testFactors[activeClip] = num;
+                  if (isProductOccupied(testFactors[0] * testFactors[1])) isForbidden = true;
+              }
+              return (
+                <div
+                  key={num}
+                  className={`track-number
+                    ${isFactor ? 'is-factor' : ''}
+                    ${isPending ? 'is-pending' : ''}
+                    ${isForbidden ? 'forbidden' : ''}`
+                  } onClick={() => !isForbidden && handleNumberClick(num)}>
+                  {num}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

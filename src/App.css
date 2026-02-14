@@ -140,19 +140,53 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
 }
 .track-number.forbidden:hover { color: #d63031; /* 鼠标悬停显示红色警告 */ }
 
-/* 滑块样式*/
-.paperclip {
-  position: absolute; top: 1px; height: 12px; width: 7%;
-  border-radius: 20px; border: 2px solid; z-index: 3;
-  transition: left 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-  display: flex; justify-content: center; align-items: flex-end;
-  padding-bottom: 0px; font-size: 0.5rem; background: rgba(0,0,0,0.3); cursor: grab;
+/* --- 轨道数字基础样式 --- */
+.track-number {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  margin: 4px;
+  aspect-ratio: 1;
 }
-.clip-a { border-color: #ff9f43; color: #ff9f43; }
-.clip-b { border-color: #54a0ff; color: #54a0ff; }
-.paperclip.active { background: rgba(255, 255, 255, 0.2); transform: translateY(-3px) scale(1.4); }
 
-/* 添加到 App.css 末尾 */
+/* 视觉效果 A: 被选为 Factor 的数字 (紫色) */
+.track-number.is-factor {
+  background-color: #a29bfe; /* 柔和的紫色 */
+  color: white;
+  box-shadow: 0 0 10px rgba(162, 155, 254, 0.5);
+  transform: scale(1.1);
+}
+
+/* 视觉效果 B: 正在准备被移动的 Factor (几乎透明/虚线) */
+.track-number.is-pending {
+  background-color: transparent;
+  border: 2px dashed #a29bfe;
+  color: #a29bfe;
+  opacity: 0.4;
+  transform: scale(0.9);
+  animation: pulse 1.5s infinite;
+}
+
+/* 视觉效果 C: 禁止点击的状态 */
+.track-number.forbidden {
+  color: #333;
+  text-decoration: line-through;
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.2; }
+  100% { opacity: 0.4; }
+}
 
 /* 可点击的玩家 Badge */
 .player-badge.clickable {

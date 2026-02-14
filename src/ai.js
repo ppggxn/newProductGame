@@ -84,7 +84,7 @@ function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCo
     // --- [核心修复] 风险检查 ---
     // 必须在“模拟棋盘”上检查对手能否赢，因为当前格子已经被 AI 占了！
 
-    // 3.1 创建模拟滑块
+    // 3.1 创建模拟factor
     const nextFactors = [...factors];
     nextFactors[move.clipIndex] = move.value;
 
@@ -97,7 +97,7 @@ function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCo
         nextBoard[idx] = { ...nextBoard[idx], owner: aiPlayer }; // 更新该格子的主人
     }
 
-    // 3.3 检查对手在“新棋盘”和“新滑块”下能否获胜
+    // 3.3 检查对手在模拟棋盘和factor下能否获胜
     if (canOpponentWinNextTurn(nextBoard, nextFactors, valueToIndexMap, targetCount, opponent)) {
       move.score += SCORES_WEIGHT.GIVE_WIN;
     }
