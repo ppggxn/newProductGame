@@ -192,19 +192,7 @@ export default function App() {
     if (playerTypes[currentPlayer] === 'human' && !winner && turnCount >= 15) {
       const possibleMoves = getAllLegalMoves(board, factors, valueToIndexMap);
       if (possibleMoves.length === 0) {
-        // 无路可走，触发失败逻辑
-        setMsgObj({ key: 'surrender' });
-        const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "total":0}');
-        // 假设 p1 是人类玩家，如果是 p2 则调整
-        const opponent = currentPlayer === 'p1' ? 'p2' : 'p1';
-        if (opponent === 'p1') {
-          stats.p1Wins++;
-        } else if (opponent === 'p2') {
-          stats.p2Wins++;
-        }
-        stats.total++;
-        localStorage.setItem('npg_stats', JSON.stringify(stats));
-        setWinner(opponent);
+        handleSurrender(currentPlayer);
       }
     }
   }, [currentPlayer, playerTypes, winner, turnCount, board, factors, valueToIndexMap]);
@@ -233,16 +221,27 @@ export default function App() {
     resetGameStatus();
   };
 
+  // 定义通用的无路可走(认输)处理逻辑
+  const handleSurrender = (loser) => {
+    const winnerPlayer = loser === 'p1' ? 'p2' : 'p1';
+    setWinner(winnerPlayer); // 锁定胜局，防止重复触发
+    setMsgObj({ key: 'surrender' });
+    // 统一更新统计数据
+    const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "total":0}');
+    if (winnerPlayer === 'p1') {
+      stats.p1Wins++;
+    } else {
+      stats.p2Wins++;
+    }
+    stats.total++;
+    localStorage.setItem('npg_stats', JSON.stringify(stats));
+  };
+
   const performAIMove = () => {
     // 传入映射表
     const move = getAIMove(board, factors, turnCount, valueToIndexMap, settingWinCount, aiDifficulty);
     if (!move) {
-      setMsgObj({ key: 'surrender' });
-      // 更新统计数据
-      const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "total":0}');
-      turnCount % 2 === 0 ? stats.p2Wins++ : stats.p1Wins++;
-      stats.total++;
-      localStorage.setItem('npg_stats', JSON.stringify(stats));
+      handleSurrender(currentPlayer);
       return;
     }
     const { clipIndex, value } = move;
