@@ -274,46 +274,17 @@ export default function App() {
   };
 
   const handleNumberClick = (num) => {
-    // --- 新增：在人类玩家回合开始时检查是否无路可走 ---
-    if (!winner && playerTypes[currentPlayer] === 'human' && turnCount >= 2) {
-      // 检查当前玩家是否还有合法移动
-      const legalMoves = getAllLegalMoves(board, factors, valueToIndexMap);
-      if (legalMoves.length === 0) {
-        // 当前人类玩家无路可走，判定其失败
-        const losingPlayer = currentPlayer;
-        const winningPlayer = losingPlayer === 'p1' ? 'p2' : 'p1';
-
-        setWinner(winningPlayer);
-        setMsgObj({ key: 'surrender', params: { player: t[losingPlayer] } }); // 假设你有一个翻译键 'surrender'
-
-        // 更新统计数据
-        const stats = JSON.parse(localStorage.getItem('npg_stats') || '{"p1Wins":0, "p2Wins":0, "total":0}');
-        if (winningPlayer === 'p1') {
-          stats.p1Wins++;
-        } else if (winningPlayer === 'p2') {
-          stats.p2Wins++;
-        }
-        stats.total++;
-        localStorage.setItem('npg_stats', JSON.stringify(stats));
-
-        // 直接返回，不执行后续逻辑
-        return;
-      }
-    }
-    // --- END OF 新增 ---
-
     if (playerTypes[currentPlayer] === 'ai' && !winner) return;
     if (winner) return;
+
     if (turnCount === 0) {
-      // ... 原始的 turnCount === 0 逻辑 ...
       setFactors([num, null]);
       setTurnCount(1);
       setCurrentPlayer('p2');
       setMsgObj({ key: 'placeB' });
-      return; // 添加 return
+      return;
     }
     if (turnCount === 1) {
-      // ... 原始的 turnCount === 1 逻辑 ...
       const potProd = factors[0] * num;
       if (isProductOccupied(potProd)) {
         setMsgObj({ key: 'occupied', params: { val: potProd } });
@@ -323,12 +294,8 @@ export default function App() {
       setFactors(newFactors);
       setTurnCount(2);
       attemptMove(newFactors, 'p2');
-      return; // 添加 return
+      return;
     }
-
-    // --- 原始的 turnCount >= 2 的逻辑 ---
-    // if (activeClip === null) { ... }
-    // ... (保持原有逻辑不变，这部分是在检查了无路可走之后才会运行) ...
 
     if (activeClip === null) {
       if (num === factors[0] && num !== factors[1]) {
@@ -357,7 +324,7 @@ export default function App() {
 
     setFactors(newFactors);
     setActiveClip(null);
-    attemptMove(newFactors, currentPlayer); // 这里还是会调用，但上面的检查已经解决了问题
+    attemptMove(newFactors, currentPlayer);
   };
 
   const attemptMove = (currentFactors, playerWhoMoved) => {
