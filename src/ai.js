@@ -26,6 +26,30 @@ export function getAIMove(board, factors, turnCount, valueToIndexMap, currentWin
 }
 
 /**
+ * 获取当前所有合法的移动组合
+ */
+export function getAllLegalMoves(board, factors, valueToIndexMap) {
+  const moves = [];
+  const [f1, f2] = factors;
+
+  FACTOR_RANGE.forEach(num => {
+    const product = num * f2;
+    // 这里传入 board 检查，如果 board 是 nextBoard，已占用的格子会被过滤
+    if (num !== f1 && !isProductOccupied(board, product, valueToIndexMap)) {
+      moves.push({ clipIndex: 0, value: num, product });
+    }
+  });
+
+  FACTOR_RANGE.forEach(num => {
+    const product = num * f1;
+    if (num !== f2 && !isProductOccupied(board, product, valueToIndexMap)) {
+      moves.push({ clipIndex: 1, value: num, product });
+    }
+  });
+  return moves;
+}
+
+/**
  * 高级贪心策略
  */
 function getSmartGreedyMove(board, factors, turnCount, valueToIndexMap, targetCount, aiPlayer, opponent) {
@@ -137,30 +161,6 @@ function getLongestChainAfterMove(board, product, player, valueToIndexMap) {
     maxLen = Math.max(maxLen, count);
   }
   return maxLen;
-}
-
-/**
- * 获取当前所有合法的移动组合
- */
-function getAllLegalMoves(board, factors, valueToIndexMap) {
-  const moves = [];
-  const [f1, f2] = factors;
-
-  FACTOR_RANGE.forEach(num => {
-    const product = num * f2;
-    // 这里传入 board 检查，如果 board 是 nextBoard，已占用的格子会被过滤
-    if (num !== f1 && !isProductOccupied(board, product, valueToIndexMap)) {
-      moves.push({ clipIndex: 0, value: num, product });
-    }
-  });
-
-  FACTOR_RANGE.forEach(num => {
-    const product = num * f1;
-    if (num !== f2 && !isProductOccupied(board, product, valueToIndexMap)) {
-      moves.push({ clipIndex: 1, value: num, product });
-    }
-  });
-  return moves;
 }
 
 /**
