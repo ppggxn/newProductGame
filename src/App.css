@@ -152,6 +152,14 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   transform: scale(0.8);
 }
 
+/* 视觉效果 D: Factor但禁止点击的状态 */
+.track-number.forbidden.is-factor {
+  color: #ea3fce;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
 @keyframes pulse {
   0% { opacity: 0.4; }
   50% { opacity: 0.2; }
