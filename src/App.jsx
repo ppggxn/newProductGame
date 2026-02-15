@@ -90,11 +90,11 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
           <div className="stats-grid">
             <div className="stat-card">
               <span className="stat-value">{stats.p1Wins}</span>
-              <span className="stat-label">P1 {translations[lang].wins}</span>
+              <span className="stat-label">{translations[lang].p1} {translations[lang].wins}</span>
             </div>
             <div className="stat-card">
               <span className="stat-value">{stats.p2Wins}</span>
-              <span className="stat-label">P2 {translations[lang].wins}</span>
+              <span className="stat-label">{translations[lang].p2}  {translations[lang].wins}</span>
             </div>
           </div>
 
