@@ -226,27 +226,6 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   animation: fadeIn 0.2s ease-out;
 }
 
-/* 模态框主体 */
-.modal-content {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  position: relative;
-  color: #333;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
 .modal-header h2 {
   margin: 0;
   font-size: 1.2rem;
@@ -393,4 +372,120 @@ h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #fff; }
   background: #4ecdc4;
   height: 100%;
   transition: width 0.5s ease;
+}
+
+/* 模态框主体 */
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  /* 设置最小高度，防止切换内容时模态框跳动，保持大小基本一致 */
+  min-height: 480px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  position: relative;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  flex-shrink: 0; /* 防止头部被压缩 */
+}
+
+/* 新增：头部左侧按钮组 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Info 按钮样式，复用 language-btn 的基础，增加特定样式 */
+.info-btn {
+  background: transparent;
+  color: #666;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  font-family: 'Times New Roman', serif; /* 衬线体 "i" */
+  font-style: italic;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.info-btn:hover {
+  background-color: #f0f0f0;
+  color: #2c3e50;
+}
+
+/* 激活状态：变色 */
+.info-btn.active {
+  color: #4ecdc4; /* 使用 P2 颜色或自定义颜色 */
+  background-color: rgba(78, 205, 196, 0.1);
+  transform: scale(1.1);
+}
+
+/* 规则容器样式 */
+.rules-container {
+  text-align: left;
+  overflow-y: auto;
+  flex: 1; /* 填满剩余空间 */
+  padding-right: 5px;
+}
+
+.rules-container h3 {
+  font-size: 1rem;
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 10px;
+  border-left: 4px solid #ff6b6b;
+  padding-left: 8px;
+}
+
+.rules-container p, .rules-container li {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.rules-container ul {
+  padding-left: 20px;
+  margin-top: 5px;
+}
+
+/* 规则底部 email 链接 */
+.rules-footer {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed #eee;
+}
+
+.rules-footer a {
+  display: flex;
+  align-items: center;
+  color: #4ecdc4;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.rules-footer a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
 }

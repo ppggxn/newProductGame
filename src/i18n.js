@@ -25,7 +25,17 @@ export const translations = {
     statsNum: "胜场 / 总局数",
     wins: '胜',
     winRate: '胜率',
-    stats: '游戏统计'
+    stats: '游戏统计',
+    rulesTitle: "游戏规则",
+    coreGameplay: "核心玩法",
+    coreGameplayText: "结合算术逻辑与空间博弈。通过移动底部 1~9 的因子，计算乘积来占领 6x6 棋盘上的对应数字格子",
+    detailedRules: "规则",
+    rule1: "开局玩家 1 选择一个因数，不占领格子",
+    rule2: "玩家 2 选择一个因数，产生乘积并占领对应格子",
+    rule3: "玩家轮流移动一个因数以占领新的未被占领的格子",
+    rule4: "率先在棋盘上形成连续的连线（横/纵/斜）或迫使对手无路可走获胜",
+    contact: "联系",
+    email: "earpiece_parlor090@simplelogin.com"
   },
   en: {
     title: "New Product Game",
@@ -52,6 +62,16 @@ export const translations = {
     statsNum: "Win / Total",
     wins: 'Wins',
     winRate: 'Win Rate',
-    stats: 'Statistics'
+    stats: 'Statistics',
+    rulesTitle: "Game Rules",
+    coreGameplay: "Core",
+    coreGameplayText: "Combine arithmetic with strategy. Move factors (1-9) to create a product and capture the corresponding cell on the 6x6 grid",
+    detailedRules: "Rules",
+    rule1: "To start, Player 1 chooses a factor (No capture)",
+    rule2: "Player 2 chooses a factor to capture the first cell",
+    rule3: "Players move a factor in turn to capture a new cell that is available",
+    rule4: "The goal is to have cells in a row or force opponent to have no moves",
+    contact: "Contact",
+    email: "earpiece_parlor090@simplelogin.com"
   }
 };

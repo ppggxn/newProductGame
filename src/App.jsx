@@ -8,6 +8,7 @@ import { GRID_SIZE, WIN_COUNT as DEFAULT_WIN_COUNT, FACTOR_RANGE, THINKING_TIME 
 // 模态框组件
 const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, setDifficulty, lang, setLang, onReset, thinkingTime, setThinkingTime }) => {
   if (!isOpen) return null;
+  const [showRules, setShowRules] = useState(false);
   const stats = JSON.parse(localStorage.getItem('npg_stats') ||
   '{"p1Wins":0, "p2Wins":0, "total":0}');
   // 计算各自胜率
@@ -30,94 +31,126 @@ const SettingsModal = ({ isOpen, onClose, winCount, setWinCount, difficulty, set
 
   return (
     <div className="modal-overlay" onClick={onClose}>
+      {/* 阻止冒泡，并设置最小高度保持大小一致 */}
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <button className={"language-btn"} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
-            <img src={LanguageIcon} alt="🌐"/>
-          </button>
+          <div className="header-actions">
+            <button className={"language-btn"} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+              <img src={LanguageIcon} alt="🌐"/>
+            </button>
+            {/* 新增 Info 按钮 */}
+            <button
+              className={`info-btn ${showRules ? 'active' : ''}`}
+              onClick={() => setShowRules(!showRules)}
+            >
+              i
+            </button>
+          </div>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
-        {/* 胜利条件设置 */}
-        <div className="modal-section">
-          <h3>{translations[lang].winCount}</h3>
-          <div className="segmented-control">
-            {[3, 4, 5, 6].map(num => (
-              <button
-                key={num}
-                className={`segment-btn ${winCount === num ? 'active' : ''}`}
-                onClick={() => handleWinCountChange(num)}
-              >
-                {num}
-              </button>
-            ))}
-          </div>
-          <p className="message-box">* {translations[lang].warning}</p>
-        </div>
+        {/* 条件渲染：显示规则 或 显示设置 */}
+        {showRules ? (
+          <div className="rules-container">
+            <h3>{translations[lang].coreGameplay}</h3>
+            <p>{translations[lang].coreGameplayText}</p>
 
-        {/* AI 思考时间，难度*/}
-        <div className="modal-section">
-          <div className="section-header-row">
-            <h3>
-              {translations[lang].difficulty}
-              <span className="time-control">⚡
-                <input type="range" min="0" max="5" step="1"
-                  value={thinkingTime / 1000}
-                  onChange={(e) => setThinkingTime(Number(e.target.value) * 1000)}/>
-                <span className="time-value">{thinkingTime / 1000}s</span>
-              </span>
-            </h3>
-          </div>
-          <div className="segmented-control">
-            {[1, 2, 3, 4, 5].map(mode => (
-              <button
-                key={mode}
-                className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
-                onClick={() => setDifficulty(mode)}>{mode}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* 统计面板 */}
-        <div className="modal-section">
-          <div className="stats-header">
-            <h3>{translations[lang].stats}</h3>
-            {/* 重置按钮 */}
-            <button
-              className="settings-btn"
-              onClick={resetStats}>↻</button>
-          </div>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <span className="stat-value">{stats.p1Wins}</span>
-              <span className="stat-label">{translations[lang].p1} {translations[lang].wins}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{stats.p2Wins}</span>
-              <span className="stat-label">{translations[lang].p2}  {translations[lang].wins}</span>
-            </div>
-          </div>
+            <h3>{translations[lang].detailedRules}</h3>
+            <ul>
+              <li>{translations[lang].rule1}</li>
+              <li>{translations[lang].rule2}</li>
+              <li>{translations[lang].rule3}</li>
+              <li>{translations[lang].rule4}</li>
+            </ul>
 
-            {/* 胜率条形图 */}
-          <div className="win-rate-container">
-            <div className="win-rate-header">
-              <span className="win-rate">{translations[lang].p1}: {p1WinRate}%</span>
-              <span className="win-rate">{translations[lang].p2}: {p2WinRate}%</span>
+            <div className="rules-footer">
+              <a href={`mailto:${translations[lang].email}`}>✉️ {translations[lang].contact}</a>
             </div>
-            <div className="win-rate-bar-container">
-              <div className="win-rate-bar-inner">
-                <div
-                  className="win-rate-bar-p1"
-                  style={{ width: `${p1WinRate}%` }}
-                />
-                <div
-                  className="win-rate-bar-p2"
-                  style={{ width: `${p2WinRate}%` }}
-                />
+          </div>
+        ) : (
+          <>
+            {/* 胜利条件设置 */}
+            <div className="modal-section">
+              <h3>{translations[lang].winCount}</h3>
+              <div className="segmented-control">
+                {[3, 4, 5, 6].map(num => (
+                  <button
+                    key={num}
+                    className={`segment-btn ${winCount === num ? 'active' : ''}`}
+                    onClick={() => handleWinCountChange(num)}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <p className="message-box">* {translations[lang].warning}</p>
+            </div>
+
+            {/* AI 思考时间，难度*/}
+            <div className="modal-section">
+              <div className="section-header-row">
+                <h3>
+                  {translations[lang].difficulty}
+                  <span className="time-control">⚡
+                    <input type="range" min="0" max="5" step="1"
+                      value={thinkingTime / 1000}
+                      onChange={(e) => setThinkingTime(Number(e.target.value) * 1000)}/>
+                    <span className="time-value">{thinkingTime / 1000}s</span>
+                  </span>
+                </h3>
+              </div>
+              <div className="segmented-control">
+                {[1, 2, 3, 4, 5].map(mode => (
+                  <button
+                    key={mode}
+                    className={`segment-btn ${difficulty === mode ? 'active' : ''}`}
+                    onClick={() => setDifficulty(mode)}>{mode}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
+            {/* 统计面板 */}
+            <div className="modal-section">
+              <div className="stats-header">
+                <h3>{translations[lang].stats}</h3>
+                {/* 重置按钮 */}
+                <button
+                  className="settings-btn"
+                  onClick={resetStats}>↻</button>
+              </div>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span className="stat-value">{stats.p1Wins}</span>
+                  <span className="stat-label">{translations[lang].p1} {translations[lang].wins}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{stats.p2Wins}</span>
+                  <span className="stat-label">{translations[lang].p2}  {translations[lang].wins}</span>
+                </div>
+              </div>
+
+                {/* 胜率条形图 */}
+              <div className="win-rate-container">
+                <div className="win-rate-header">
+                  <span className="win-rate">{translations[lang].p1}: {p1WinRate}%</span>
+                  <span className="win-rate">{translations[lang].p2}: {p2WinRate}%</span>
+                </div>
+                <div className="win-rate-bar-container">
+                  <div className="win-rate-bar-inner">
+                    <div
+                      className="win-rate-bar-p1"
+                      style={{ width: `${p1WinRate}%` }}
+                    />
+                    <div
+                      className="win-rate-bar-p2"
+                      style={{ width: `${p2WinRate}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
